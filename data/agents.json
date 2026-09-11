@@ -1,0 +1,16 @@
+{
+  "permission_levels":{"A0":"read","A1":"prepare","A2":"execute_within_policy","A3":"human_approval_required"},
+  "agents":[
+    {"id":"orchestrator","name":"HI Orchestrator","max_permission":"A2","triggers":["chat_command","event","schedule"],"tools":["knowledge","tasks","agent_router","audit"]},
+    {"id":"contract_hunter","name":"Contract Hunter","max_permission":"A2","triggers":["schedule","manual","pipeline_low"],"tools":["web","crm","gmail","scoring"]},
+    {"id":"master_designer","name":"Master Designer","max_permission":"A2","triggers":["content_calendar","manual","campaign"],"tools":["brand_kit","image_generation","media_library","social_scheduler"]},
+    {"id":"social","name":"Social Media Manager","max_permission":"A2","triggers":["calendar","new_asset","performance_drop"],"tools":["metricool","social_apis","analytics"]},
+    {"id":"crm_sales","name":"CRM & Sales","max_permission":"A2","triggers":["new_lead","reply","followup_due"],"tools":["crm","gmail","calendar"]},
+    {"id":"inbox","name":"Inbox Agent","max_permission":"A2","triggers":["new_email"],"tools":["gmail","crm","knowledge"]},
+    {"id":"proposal","name":"Proposal Agent","max_permission":"A1","triggers":["quote_request","qualified_opportunity"],"tools":["templates","pricing","pdf"]},
+    {"id":"web_software","name":"Web & Software Agent","max_permission":"A2","triggers":["project_task","bug","feature_request"],"tools":["github","render","tests"]},
+    {"id":"automation","name":"Automation Agent","max_permission":"A2","triggers":["webhook","cron","event"],"tools":["n8n","queue","webhooks"]},
+    {"id":"analytics","name":"Analytics Agent","max_permission":"A0","triggers":["daily","weekly","monthly","manual"],"tools":["crm","social","web_analytics"]},
+    {"id":"knowledge","name":"Knowledge Agent","max_permission":"A1","triggers":["new_document","policy_update"],"tools":["vector_store","drive","brand_kit"]}
+  ]
+}
