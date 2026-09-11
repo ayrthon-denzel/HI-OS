@@ -5,7 +5,9 @@
   "description": "HI MARKETING Operating System",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check js/auth.js && node --check js/app.js && node --check js/job-service.js && node --check js/live-api.js",
+    "security:audit": "npm audit --omit=dev --audit-level=high"
   },
   "engines": {
     "node": ">=20"
