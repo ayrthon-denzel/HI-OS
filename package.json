@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "HI MARKETING Operating System",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "serve -s . -l $PORT"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
   }
 }
