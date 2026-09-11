@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HI OS — Command Center</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-block">
+        <img src="./assets/hi-logo-crop.png" alt="HI MARKETING" class="brand-logo" />
+        <div class="brand-copy">
+          <strong>HI OS</strong>
+          <span>Digital • Software • Growth</span>
+        </div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="sidebar-footer">
+        <div class="status-dot"></div>
+        <div><strong>Orchestrator</strong><span>En ligne</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">HI MARKETING OPERATING SYSTEM</p>
+          <h1 id="pageTitle">Command Center</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost" id="openApprovals">Validations <span class="badge">3</span></button>
+          <button class="profile">AD</button>
+        </div>
+      </header>
+
+      <section id="content"></section>
+    </main>
+
+    <aside class="copilot" id="copilot">
+      <div class="copilot-head">
+        <div>
+          <p class="eyebrow">HI ORCHESTRATOR</p>
+          <h2>Commande centrale</h2>
+        </div>
+        <span class="live">● LIVE</span>
+      </div>
+      <div class="messages" id="messages">
+        <div class="msg system">Bonjour A-D. Donne-moi un objectif, je route la mission vers les bons agents et je ne te sollicite que si une validation A3 est nécessaire.</div>
+      </div>
+      <div class="quick-actions" id="quickActions">
+        <button data-cmd="Trouve 10 prospects qualifiés à Dakar et prépare les approches.">10 prospects</button>
+        <button data-cmd="Master Designer, prépare le contenu de la semaine pour HI Marketing.">Semaine social</button>
+        <button data-cmd="Résume les réponses commerciales reçues aujourd'hui et les prochaines actions.">Inbox commercial</button>
+      </div>
+      <form class="composer" id="chatForm">
+        <textarea id="chatInput" placeholder="Ex. Master Designer, prépare 3 posts et programme-les..." rows="3"></textarea>
+        <div class="composer-row"><span>Routage multi-agents automatique</span><button type="submit">Exécuter ↗</button></div>
+      </form>
+    </aside>
+  </div>
+
+  <dialog id="approvalDialog">
+    <div class="dialog-head"><div><p class="eyebrow">A3</p><h2>Validations humaines</h2></div><button id="closeApprovals">×</button></div>
+    <div class="approval-list">
+      <article><div><strong>Remise commerciale</strong><span>Prospect : Groupe Horizon</span></div><p>-15 % demandé sur une refonte web.</p><div><button class="ghost">Refuser</button><button>Valider</button></div></article>
+      <article><div><strong>Publication sensible</strong><span>Master Designer</span></div><p>Campagne comparative mentionnant un concurrent.</p><div><button class="ghost">Modifier</button><button>Valider</button></div></article>
+      <article><div><strong>Déploiement production</strong><span>Web Agent</span></div><p>Mise en ligne d'une nouvelle version client.</p><div><button class="ghost">Reporter</button><button>Valider</button></div></article>
+    </div>
+  </dialog>
+
+  <script src="./js/app.js"></script>
+</body>
+</html>
