@@ -14,8 +14,30 @@ CREATE TABLE IF NOT EXISTS users (
   full_name TEXT,
   role TEXT NOT NULL CHECK (role IN ('ceo','admin_ops','agent_service','client_viewer')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended')),
+  password_hash TEXT,
+  mfa_secret TEXT,
+  mfa_enabled BOOLEAN NOT NULL DEFAULT false,
+  must_change_password BOOLEAN NOT NULL DEFAULT false,
+  last_login_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(tenant_id,email)
+);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  token_hash TEXT UNIQUE NOT NULL,
+  ip_hash TEXT,
+  user_agent_hash TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS clients (
@@ -55,6 +77,18 @@ CREATE TABLE IF NOT EXISTS job_profiles (
   salary_min NUMERIC,
   languages TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   constraints JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS mission_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  mission_id UUID NOT NULL REFERENCES missions(id) ON DELETE CASCADE,
+  document_type TEXT NOT NULL CHECK (document_type IN ('cv_master','cv_tailored','cover_letter','portfolio','other')),
+  storage_provider TEXT NOT NULL DEFAULT 'external',
+  storage_ref TEXT NOT NULL,
+  sha256 TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -129,6 +163,17 @@ CREATE TABLE IF NOT EXISTS approvals (
   resolved_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS client_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  mission_id UUID REFERENCES missions(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info','attention','critical')),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  acknowledged_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
   id BIGSERIAL PRIMARY KEY,
   tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
@@ -142,8 +187,11 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_token ON auth_sessions(token_hash) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_missions_tenant ON missions(tenant_id,status);
+CREATE INDEX IF NOT EXISTS idx_documents_mission ON mission_documents(mission_id,document_type);
 CREATE INDEX IF NOT EXISTS idx_opportunities_mission ON opportunities(mission_id,status,score DESC);
 CREATE INDEX IF NOT EXISTS idx_applications_mission ON applications(mission_id,status);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_mission ON agent_runs(mission_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_client_events_mission ON client_events(mission_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_tenant ON audit_log(tenant_id,created_at DESC);
