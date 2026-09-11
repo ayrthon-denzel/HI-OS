@@ -9,23 +9,55 @@
       const d=await api('/api/admin/dashboard');
       if ($('#pageTitle')?.textContent !== 'Command Center') return;
       $('#content').innerHTML = `
-        <div class="grid kpis">
-          ${kpi('Clients actifs',d.clients,'Base HI OS')}
-          ${kpi('Missions actives',d.missions,'Toutes cellules')}
-          ${kpi('Candidatures',d.applications,'En cours / envoyées')}
-          ${kpi('Entretiens',d.interviews,'Escalade prioritaire')}
+        <section class="command-hero">
+          <div class="command-hero-copy">
+            <p class="eyebrow">HI MARKETING • OPERATING SYSTEM</p>
+            <h2>Tout HI MARKETING.<br><span>Une seule commande.</span></h2>
+            <p>Prospection, création, ventes, projets, candidatures clients, automatisations et contrôle qualité coordonnés par HI Orchestrator.</p>
+            <div class="command-hero-actions">
+              <button data-command="Trouve les priorités commerciales de la journée et lance les actions A0–A2 autorisées.">Lancer les priorités ↗</button>
+              <button class="ghost" data-page-target="designer">Ouvrir Master Designer</button>
+            </div>
+          </div>
+          <div class="command-hero-status">
+            <div class="brand-seal"><span>HI</span><small>OS</small></div>
+            <div class="system-state"><i></i><div><strong>Système opérationnel</strong><span>PostgreSQL • Agents • Audit</span></div></div>
+          </div>
+        </section>
+
+        <div class="grid kpis premium-kpis">
+          ${kpi('Clients actifs',d.clients,'Base sécurisée')}
+          ${kpi('Missions actives',d.missions,'Cellules autonomes')}
+          ${kpi('Candidatures',d.applications,'Suivi en temps réel')}
+          ${kpi('Entretiens',d.interviews,'Escalade CEO')}
         </div>
+
         <div class="grid dashboard-grid">
-          <section class="card"><p class="eyebrow">SYSTÈME</p><h3>HI OS opérationnel</h3><div class="activity">
-            ${row('◈','HI Orchestrator','Routage sécurisé A0–A3','En ligne')}
-            ${row('◫','Job Search Factory',`${d.missions} mission(s) active(s)`,'Multi-agents')}
+          <section class="card operations-card"><div class="section-head"><div><p class="eyebrow">LIVE OPERATIONS</p><h3>Centre des opérations</h3></div><span class="live-chip">● EN LIGNE</span></div><div class="activity">
+            ${row('◈','HI Orchestrator','Routage sécurisé et coordination multi-agents','A0 → A3')}
+            ${row('◫','Job Search Factory',`${d.missions} mission(s) active(s)`,'Superviseurs dédiés')}
             ${row('⚙','Agent Engine',`${d.agentRuns} exécution(s) sur 24 h`,'Journalisé')}
-            ${row('◇','Security Layer','Isolation client + audit + sessions','Strict')}
+            ${row('◇','Security Layer','Isolation client, chiffrement et audit','Mode strict')}
           </div></section>
-          <section class="card"><p class="eyebrow">PRIORITÉS</p><h3>Ce qui remonte au CEO</h3><div class="list"><div>Entretiens et tests importants</div><div>Actions A3 / engagements sensibles</div><div>Incidents sécurité ou intégration</div><div>Décisions commerciales hors règles</div></div></section>
-        </div>`;
+          <section class="card ceo-card"><p class="eyebrow">CEO CONTROL</p><h3>Ce qui nécessite ton attention</h3><div class="ceo-number">${esc(d.interviews)}</div><p class="ceo-label">entretien(s) ou événement(s) prioritaire(s)</p><div class="list"><div>Entretiens et tests importants</div><div>Actions A3 / engagements sensibles</div><div>Incidents sécurité ou intégration</div><div>Décisions commerciales hors règles</div></div></section>
+        </div>
+
+        <section class="service-strip">
+          ${service('◎','Contract Hunter','Prospection & acquisition','hunter')}
+          ${service('✦','Master Designer','Création & réseaux','designer')}
+          ${service('▦','CRM & Sales','Pipeline & closing','crm')}
+          ${service('◫','Job Search','Missions clients','jobfactory')}
+        </section>`;
+      bindHeroActions();
     }catch(e){ console.warn('dashboard unavailable',e.message); }
   }
+
+  function bindHeroActions(){
+    document.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>{const input=$('#chatInput');if(input){input.value=b.dataset.command;input.focus();}});
+    document.querySelectorAll('[data-page-target]').forEach(b=>b.onclick=()=>document.querySelector(`.nav button[data-page="${b.dataset.pageTarget}"]`)?.click());
+    document.querySelectorAll('[data-service-page]').forEach(b=>b.onclick=()=>document.querySelector(`.nav button[data-page="${b.dataset.servicePage}"]`)?.click());
+  }
+  function service(icon,title,sub,page){return `<button class="service-tile" data-service-page="${esc(page)}"><span class="service-icon">${icon}</span><span><strong>${esc(title)}</strong><small>${esc(sub)}</small></span><b>↗</b></button>`}
   function kpi(label,val,small){return `<article class="card kpi"><span>${esc(label)}</span><strong>${esc(val)}</strong><small>${esc(small)}</small></article>`}
   function row(icon,name,text,status){return `<div class="activity-row"><div class="icon">${icon}</div><div><p><strong>${esc(name)}</strong> — ${esc(text)}</p><span>${esc(status)}</span></div></div>`}
 
