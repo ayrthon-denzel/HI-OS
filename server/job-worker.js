@@ -39,6 +39,24 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
       AND NOT EXISTS(SELECT 1 FROM agent_runs r WHERE r.mission_id=m.id AND r.action='inbox_watch_cycle' AND r.created_at>now()-interval '20 minutes' AND r.status IN ('queued','running','success'))`);
   }
 
+  async function queueStartupDiagnostics(){
+    const q=await pool.query(`INSERT INTO agent_runs(tenant_id,mission_id,agent_name,action,permission_level,status,input)
+      SELECT m.tenant_id,m.id,'Inbox Watcher','inbox_watch_cycle','A2','queued','{"diagnostic":true,"source":"startup_health_check"}'::jsonb
+      FROM missions m
+      WHERE m.service_type='job_search'
+      AND EXISTS(SELECT 1 FROM integrations i WHERE i.mission_id=m.id AND i.provider='google_gmail' AND i.status='active')
+      AND NOT EXISTS(
+        SELECT 1 FROM agent_runs r
+        WHERE r.mission_id=m.id AND r.action='inbox_watch_cycle'
+        AND r.input->>'diagnostic'='true'
+        AND r.created_at>now()-interval '30 minutes'
+        AND r.status IN ('queued','running','success')
+      )
+      RETURNING mission_id`);
+    console.log('gmail_startup_diagnostics_queued',q.rowCount);
+    return q.rowCount;
+  }
+
   async function claimRun(){
     const c=await pool.connect();
     try{
@@ -60,7 +78,7 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
       else if(run.action==='job_search_cycle') output=await searchCycle(run);
       else if(run.action==='inbox_watch_cycle') output=await inboxCycle(run);
       await pool.query(`UPDATE agent_runs SET status='success',output=$2::jsonb,finished_at=now() WHERE id=$1`,[run.id,JSON.stringify(output)]);
-      if(run.action==='inbox_watch_cycle') console.log('inbox_watcher_success',run.mission_id,JSON.stringify({diagnostic:Boolean(run.input?.diagnostic),messages:output.messages??0,critical:output.critical??0,rejections:output.rejections??0}));
+      if(run.action==='inbox_watch_cycle') console.log('inbox_watcher_success',run.mission_id,JSON.stringify({diagnostic:Boolean(run.input?.diagnostic),connected:Boolean(output.connected),messages:output.messages??0,critical:output.critical??0,rejections:output.rejections??0}));
     }catch(e){
       console.error('job_worker_run',run.id,run.action,e.message);
       if(run.action==='inbox_watch_cycle' && /^gmail_|^google_/.test(e.message||'')){
@@ -145,7 +163,10 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
   }
 
   const timer=setInterval(tick,60_000);
-  setTimeout(tick,5_000);
+  setTimeout(async()=>{
+    try{await queueStartupDiagnostics();}catch(e){console.error('gmail_startup_diagnostics_failed',e.message);}
+    tick();
+  },2500);
   return {stop(){stopped=true;clearInterval(timer);}};
 }
 
