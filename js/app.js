@@ -13,33 +13,12 @@ const modules=[
 ];
 
 const nav=document.querySelector('#nav');let last='';
-modules.forEach(m=>{if(m.section!==last){const l=document.createElement('div');l.className='section-label';l.textContent=m.section;nav.appendChild(l);last=m.section;}const b=document.createElement('button');b.dataset.page=m.key;b.innerHTML=`<span>${m.icon}</span>${m.name}`;b.onclick=()=>render(m.key);nav.appendChild(b);});
+modules.forEach(m=>{if(m.section!==last){const l=document.createElement('div');l.className='section-label';l.textContent=m.section;nav.appendChild(l);last=m.section;}const b=document.createElement('button');b.dataset.page=m.key;b.dataset.label=m.name;b.setAttribute('aria-label',m.name);b.innerHTML=`<span>${m.icon}</span>${m.name}`;b.onclick=()=>render(m.key);nav.appendChild(b);});
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function setActive(key){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===key));}
 function prompt(text){const input=document.querySelector('#chatInput');if(!input)return;input.value=text;input.focus();document.querySelector('#toggleCopilot')?.click();}
-
 function commandPlaceholder(){return `<section class="workspace-empty"><div class="workspace-loader"></div><p>Synchronisation du Command Center…</p></section>`;}
-function modulePage(m){return `
-<section class="module-hero card">
-  <div class="module-hero-copy"><p class="eyebrow">MODULE ${esc(m.perm)} • HI OS</p><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p><div class="agent-badges">${m.tools.map(t=>`<span class="pill">${esc(t)}</span>`).join('')}</div></div>
-  <div class="module-mark"><span>${esc(m.icon)}</span><small>${esc(m.perm)}</small></div>
-</section>
-<section class="module-layout">
-  <article class="card module-primary"><div class="section-head"><div><p class="eyebrow">CENTRE DE COMMANDE</p><h3>Que veux-tu lancer ?</h3></div><span class="status">${esc(m.perm)}</span></div>
-    <div class="command-stack">
-      <button data-prompt="${esc(m.name)}, exécute les tâches prioritaires du jour et ne me remonte que les blocages."><span>Priorités du jour</span><small>Analyse puis exécution dans les limites autorisées</small><b>↗</b></button>
-      <button data-prompt="${esc(m.name)}, fais un audit complet de ton périmètre et propose les prochaines actions."><span>Audit du module</span><small>État, risques, opportunités et recommandations</small><b>↗</b></button>
-      <button data-prompt="${esc(m.name)}, prépare un rapport exécutif bref avec résultats, anomalies et prochaines actions."><span>Rapport exécutif</span><small>Lecture synthétique pour le CEO</small><b>↗</b></button>
-    </div>
-  </article>
-  <article class="card module-policy"><p class="eyebrow">AUTONOMIE</p><h3>Règles d’exécution</h3><div class="policy-line"><span>A0–A2</span><p>Lecture, préparation et exécution opérationnelle dans les règles approuvées.</p></div><div class="policy-line critical"><span>A3</span><p>Engagement financier, juridique, réputationnel ou destructif : validation humaine obligatoire.</p></div><div class="module-note">Les métriques affichées dans HI OS proviennent uniquement des données réelles disponibles. Aucun chiffre de démonstration n’est utilisé.</div></article>
-</section>`;}
-
-function render(key='command'){
-  setActive(key);const m=modules.find(x=>x.key===key)||modules[0];document.querySelector('#pageTitle').textContent=m.name;const c=document.querySelector('#content');c.innerHTML=key==='command'?commandPlaceholder():modulePage(m);document.querySelectorAll('[data-prompt]').forEach(b=>b.onclick=()=>prompt(b.dataset.prompt));
-  if(key==='command')document.dispatchEvent(new CustomEvent('hios:command-view'));
-}
-
-const dlg=document.querySelector('#approvalDialog');document.querySelector('#openApprovals').onclick=()=>dlg.showModal();document.querySelector('#closeApprovals').onclick=()=>dlg.close();
-render('command');
+function modulePage(m){return `<section class="module-hero card"><div class="module-hero-copy"><p class="eyebrow">MODULE ${esc(m.perm)} • HI OS</p><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p><div class="agent-badges">${m.tools.map(t=>`<span class="pill">${esc(t)}</span>`).join('')}</div></div><div class="module-mark"><span>${esc(m.icon)}</span><small>${esc(m.perm)}</small></div></section><section class="module-layout"><article class="card module-primary"><div class="section-head"><div><p class="eyebrow">CENTRE DE COMMANDE</p><h3>Que veux-tu lancer ?</h3></div><span class="status">${esc(m.perm)}</span></div><div class="command-stack"><button data-prompt="${esc(m.name)}, exécute les tâches prioritaires du jour et ne me remonte que les blocages."><span>Priorités du jour</span><small>Analyse puis exécution dans les limites autorisées</small><b>↗</b></button><button data-prompt="${esc(m.name)}, fais un audit complet de ton périmètre et propose les prochaines actions."><span>Audit du module</span><small>État, risques, opportunités et recommandations</small><b>↗</b></button><button data-prompt="${esc(m.name)}, prépare un rapport exécutif bref avec résultats, anomalies et prochaines actions."><span>Rapport exécutif</span><small>Lecture synthétique pour le CEO</small><b>↗</b></button></div></article><article class="card module-policy"><p class="eyebrow">AUTONOMIE</p><h3>Règles d’exécution</h3><div class="policy-line"><span>A0–A2</span><p>Lecture, préparation et exécution opérationnelle dans les règles approuvées.</p></div><div class="policy-line critical"><span>A3</span><p>Engagement financier, juridique, réputationnel ou destructif : validation humaine obligatoire.</p></div><div class="module-note">Les métriques affichées dans HI OS proviennent uniquement des données réelles disponibles. Aucun chiffre de démonstration n’est utilisé.</div></article></section>`;}
+function render(key='command'){setActive(key);const m=modules.find(x=>x.key===key)||modules[0];document.querySelector('#pageTitle').textContent=m.name;const c=document.querySelector('#content');c.innerHTML=key==='command'?commandPlaceholder():modulePage(m);document.querySelectorAll('[data-prompt]').forEach(b=>b.onclick=()=>prompt(b.dataset.prompt));if(key==='command')document.dispatchEvent(new CustomEvent('hios:command-view'));}
+const dlg=document.querySelector('#approvalDialog');document.querySelector('#openApprovals').onclick=()=>dlg.showModal();document.querySelector('#closeApprovals').onclick=()=>dlg.close();render('command');
