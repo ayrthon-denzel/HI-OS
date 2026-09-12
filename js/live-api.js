@@ -1,13 +1,19 @@
 (() => {
   const $ = s => document.querySelector(s);
-  const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 
   async function api(path, opts={}) { return window.HIOSAuth.api(path, opts); }
 
   async function refreshDashboard(){
     try{
-      const d=await api('/api/admin/dashboard');
+      const [d,health]=await Promise.all([
+        api('/api/admin/dashboard'),
+        fetch('/api/bootstrap-status',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>({}))
+      ]);
       if ($('#pageTitle')?.textContent !== 'Command Center') return;
+      const gmailReady=Boolean(health.gmailConfigured);
+      const aiReady=Boolean(health.aiConfigured);
+      const dbReady=Boolean(health.database);
       $('#content').innerHTML = `
         <section class="command-hero">
           <div class="command-hero-copy">
@@ -21,8 +27,15 @@
           </div>
           <div class="command-hero-status">
             <div class="brand-seal"><span>HI</span><small>OS</small></div>
-            <div class="system-state"><i></i><div><strong>Système opérationnel</strong><span>PostgreSQL • Agents • Audit</span></div></div>
+            <div class="system-state"><i></i><div><strong>Système opérationnel</strong><span>v${esc(health.version||'0.5')} • sécurité stricte</span></div></div>
           </div>
+        </section>
+
+        <section class="system-ribbon" aria-label="État de l'infrastructure">
+          ${healthChip('Database',dbReady,dbReady?'PostgreSQL connecté':'Connexion requise')}
+          ${healthChip('Gmail OAuth',gmailReady,gmailReady?'API configurée':'Configuration requise')}
+          ${healthChip('AI Engine',aiReady,aiReady?'OpenAI opérationnel':'Clé API requise')}
+          ${healthChip('Isolation',health.tenantIsolation===true,health.tenantIsolation===true?'Tenant strict':'À vérifier')}
         </section>
 
         <div class="grid kpis premium-kpis">
@@ -52,6 +65,7 @@
     }catch(e){ console.warn('dashboard unavailable',e.message); }
   }
 
+  function healthChip(label,ok,detail){return `<article class="health-chip ${ok?'ok':'warn'}"><span class="health-dot"></span><div><strong>${esc(label)}</strong><small>${esc(detail)}</small></div></article>`}
   function bindHeroActions(){
     document.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>{const input=$('#chatInput');if(input){input.value=b.dataset.command;input.focus();}});
     document.querySelectorAll('[data-page-target]').forEach(b=>b.onclick=()=>document.querySelector(`.nav button[data-page="${b.dataset.pageTarget}"]`)?.click());
