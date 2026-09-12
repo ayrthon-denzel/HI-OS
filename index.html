@@ -8,40 +8,48 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="description" content="HI OS — Operating System de HI MARKETING" />
   <title>HI OS — HI MARKETING</title>
-  <link rel="stylesheet" href="./styles.css?v=1.2.0" />
-  <link rel="stylesheet" href="./job.css?v=1.2.0" />
-  <link rel="stylesheet" href="./magic-v5.css?v=1.2.0" />
+  <link rel="stylesheet" href="./styles.css?v=1.3.0" />
+  <link rel="stylesheet" href="./job.css?v=1.3.0" />
+  <link rel="stylesheet" href="./magic-v5.css?v=1.3.0" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand-block" aria-label="HI MARKETING">
-        <div class="brand-mark">H</div>
-        <div class="brand-name"><strong>HI MARKETING</strong><span>Digital • Software • Growth</span></div>
+        <img src="./assets/brand-banner.jpg?v=1.3.0" alt="HI MARKETING" class="official-brand-logo" />
+        <div class="brand-name"><strong>HI OS</strong><span>Operating System</span></div>
       </div>
       <nav class="nav" id="nav"></nav>
-      <div class="sidebar-help"><span>♛</span><div><strong>HI OS</strong><small>Simple. Puissant. Pour tous.</small></div></div>
+      <div class="sidebar-help"><div class="sidebar-status-dot"></div><div><strong>HI OS</strong><small>Prêt à travailler</small></div></div>
     </aside>
+
     <main class="main">
       <header class="topbar">
         <div class="page-heading"><p class="eyebrow">HI MARKETING</p><h1 id="pageTitle">Accueil</h1></div>
-        <div class="top-actions"><div class="user-copy"><span>Bonjour,</span><strong>A-D PANIKA</strong><small>CEO — HI MARKETING</small></div><button class="ghost" id="toggleCopilot" aria-expanded="false" aria-controls="copilot">✦ Assistant</button><button class="ghost" id="openApprovals">Validations <span class="badge" id="approvalCount">0</span></button><button class="profile" aria-label="Profil A-D PANIKA">AD</button></div>
+        <div class="top-actions">
+          <button class="ghost assistant-launch" id="toggleCopilot" aria-expanded="false" aria-controls="copilot"><span class="assistant-launch-icon">✦</span> Assistant</button>
+          <button class="ghost" id="openApprovals">Validations <span class="badge" id="approvalCount">0</span></button>
+          <div class="user-copy"><span>Bonjour,</span><strong>A-D PANIKA</strong><small>CEO — HI MARKETING</small></div>
+          <button class="profile" aria-label="Profil A-D PANIKA">AD</button>
+        </div>
       </header>
       <section id="content"></section>
     </main>
+
     <div class="copilot-backdrop" id="copilotBackdrop"></div>
     <aside class="copilot" id="copilot" aria-hidden="true">
-      <div class="copilot-head"><div><p class="eyebrow">HI ASSISTANT</p><h2>Comment puis-je t’aider ?</h2></div><div style="display:flex;align-items:center;gap:8px"><span class="live">● En ligne</span><button class="copilot-close" id="closeCopilot" aria-label="Fermer">×</button></div></div>
-      <div class="messages" id="messages"><div class="msg system">Bonjour A-D. Dis-moi simplement ce que tu veux faire.</div></div>
+      <div class="copilot-head"><div><p class="eyebrow">HI ASSISTANT</p><h2>Que veux-tu faire ?</h2></div><div class="copilot-head-actions"><span class="live">● En ligne</span><button class="copilot-close" id="closeCopilot" aria-label="Fermer">×</button></div></div>
+      <div class="messages" id="messages"><div class="msg system">Bonjour A-D. Dis-moi ton objectif, je te guide vers la bonne action.</div></div>
       <div class="quick-actions" id="quickActions"><button data-cmd="Trouve de nouveaux clients qualifiés pour HI MARKETING.">Trouver des clients</button><button data-cmd="Prépare le contenu de la semaine pour HI MARKETING.">Créer du contenu</button><button data-cmd="Résume les réponses commerciales reçues aujourd'hui.">Voir mes priorités</button></div>
       <form class="composer" id="chatForm"><textarea id="chatInput" placeholder="Écris ta demande ici…" rows="3"></textarea><div class="composer-row"><span>HI OS s’occupe du reste</span><button type="submit">Envoyer</button></div></form>
     </aside>
   </div>
+
   <dialog id="approvalDialog"><div class="dialog-head"><div><p class="eyebrow">VALIDATIONS</p><h2>Décisions importantes</h2></div><button id="closeApprovals" aria-label="Fermer">×</button></div><div class="approval-list" id="approvalList"><p style="color:#8e98a5">Chargement…</p></div></dialog>
-  <script src="./js/auth.js?v=1.2.0"></script>
-  <script src="./js/app.js?v=1.2.0"></script>
-  <script src="./js/job-service.js?v=1.2.0"></script>
-  <script src="./js/live-api.js?v=1.2.0"></script>
-  <script src="./js/ui-premium.js?v=1.2.0"></script>
+  <script src="./js/auth.js?v=1.3.0"></script>
+  <script src="./js/app.js?v=1.3.0"></script>
+  <script src="./js/job-service.js?v=1.3.0"></script>
+  <script src="./js/live-api.js?v=1.3.0"></script>
+  <script src="./js/ui-premium.js?v=1.3.0"></script>
 </body>
 </html>
