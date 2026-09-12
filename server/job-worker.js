@@ -60,6 +60,7 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
       else if(run.action==='job_search_cycle') output=await searchCycle(run);
       else if(run.action==='inbox_watch_cycle') output=await inboxCycle(run);
       await pool.query(`UPDATE agent_runs SET status='success',output=$2::jsonb,finished_at=now() WHERE id=$1`,[run.id,JSON.stringify(output)]);
+      if(run.action==='inbox_watch_cycle') console.log('inbox_watcher_success',run.mission_id,JSON.stringify({diagnostic:Boolean(run.input?.diagnostic),messages:output.messages??0,critical:output.critical??0,rejections:output.rejections??0}));
     }catch(e){
       console.error('job_worker_run',run.id,run.action,e.message);
       if(run.action==='inbox_watch_cycle' && /^gmail_|^google_/.test(e.message||'')){
@@ -101,7 +102,7 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
 
   async function inboxCycle(run){
     const i=await pool.query(`SELECT * FROM integrations WHERE mission_id=$1 AND tenant_id=$2 AND provider='google_gmail' AND status='active' ORDER BY created_at DESC LIMIT 1`,[run.mission_id,run.tenant_id]);
-    if(!i.rowCount)return {connected:false};
+    if(!i.rowCount)return {connected:false,messages:0,critical:0,rejections:0};
     const originalTokens=decryptSecret(i.rows[0].token_ref);
     let tokens=originalTokens;
     const result=await listRecentMessages(tokens,'newer_than:2d');
@@ -111,6 +112,12 @@ function startJobWorker({pool,decryptSecret,encryptSecret,audit}){
     }else{
       await pool.query(`UPDATE integrations SET updated_at=now() WHERE id=$1`,[i.rows[0].id]);
     }
+
+    if(run.input?.diagnostic){
+      await audit({tenantId:run.tenant_id,actorType:'agent',actorId:'Inbox Watcher',action:'gmail.health_check',resourceType:'mission',resourceId:run.mission_id,metadata:{messages:result.messages.length}});
+      return {connected:true,diagnostic:true,messages:result.messages.length,critical:0,rejections:0,checkedAt:new Date().toISOString()};
+    }
+
     let critical=0,rejections=0;
     for(const m of result.messages){
       const text=`${m.subject} ${m.snippet} ${m.body}`.slice(0,10000);
