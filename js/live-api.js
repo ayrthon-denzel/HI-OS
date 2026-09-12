@@ -6,32 +6,58 @@
   async function refreshDashboard(){
     try{
       const [d,health]=await Promise.all([api('/api/admin/dashboard'),fetch('/api/bootstrap-status',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>({}))]);
-      if($('#pageTitle')?.textContent!=='Command Center')return;
+      if($('#pageTitle')?.textContent!=='Accueil')return;
       const db=Boolean(health.database),gmail=Boolean(health.gmailConfigured),ai=Boolean(health.aiConfigured),iso=health.tenantIsolation===true;
       $('#content').innerHTML=`
-      <section class="command-hero">
-        <div class="command-hero-copy"><p class="eyebrow">HI MARKETING • OPERATING SYSTEM</p><h2>Ton agence.<br><span>Sous contrôle.</span></h2><p>Un cockpit unique pour piloter acquisition, création, opérations, production et services clients. Les agents exécutent en A0–A2 ; HI OS ne te remonte que les décisions qui comptent.</p><div class="command-hero-actions"><button data-command="Analyse toutes les opérations HI MARKETING et exécute les priorités A0–A2 du jour.">Lancer la journée ↗</button><button class="ghost" data-page-target="jobfactory">Ouvrir Job Search Factory</button></div></div>
-        <div class="command-hero-status"><div class="brand-seal"><span>HI</span><small>OS</small></div><div class="system-state"><i></i><div><strong>${db&&gmail&&ai&&iso?'Stack configurée':'Stack à vérifier'}</strong><span>v${esc(health.version||'0.5')} • sécurité stricte</span></div></div></div>
-      </section>
-      <section class="system-ribbon" aria-label="État de l'infrastructure">${chip('Database',db,db?'PostgreSQL connecté':'Connexion requise')}${chip('Gmail OAuth',gmail,gmail?'OAuth disponible':'Configuration requise')}${chip('AI Engine',ai,ai?'Clé API configurée':'Clé API requise')}${chip('Isolation',iso,iso?'Tenant strict':'À vérifier')}</section>
-      <div class="grid kpis premium-kpis">${kpi('Clients actifs',d.clients,'Données réelles')}${kpi('Missions actives',d.missions,'Cellules en production')}${kpi('Candidatures',d.applications,'Pipeline réel')}${kpi('Entretiens',d.interviews,'Escalade CEO')}</div>
-      <div class="grid dashboard-grid"><section class="card operations-card"><div class="section-head"><div><p class="eyebrow">LIVE OPERATIONS</p><h3>État du système</h3></div><span class="live-chip">● LIVE</span></div><div class="activity">${row('◈','HI Orchestrator',ai?'API configurée — santé vérifiée à l’exécution':'Routage de secours actif',ai?'AI READY':'POLICY MODE')}${row('◫','Job Search Factory',`${d.missions} mission(s) active(s)`,'Supervision mission')}${row('⚙','Agent Engine',`${d.agentRuns} exécution(s) sur 24 h`,'Audit trail')}${row('◇','Security Layer','Isolation, chiffrement et contrôle A3','STRICT')}</div></section><section class="card ceo-card"><p class="eyebrow">CEO CONTROL</p><h3>Attention requise</h3><div class="ceo-number">${esc(d.interviews)}</div><p class="ceo-label">événement(s) entretien / priorité</p><div class="list"><div>A3 : toujours bloqué avant validation</div><div>Gmail : surveillance mission-scoped</div><div>CV : stockage chiffré</div><div>Actions : journalisées</div></div></section></div>
-      <section class="service-strip">${service('◎','Contract Hunter','Prospection & acquisition','hunter')}${service('✦','Master Designer','Création & marque','designer')}${service('▦','CRM & Sales','Pipeline & closing','crm')}${service('◫','Job Search','Missions clients','jobfactory')}</section>`;
-      bindHero();
+      <section class="home-layout">
+        <div class="home-main">
+          <form class="home-search" id="homeSearch"><span>⌕</span><input id="homeSearchInput" aria-label="Demande rapide" placeholder="Que veux-tu faire aujourd’hui ?" /><button type="submit">Demander</button></form>
+          <section class="welcome-hero">
+            <div class="welcome-copy"><p class="eyebrow">BIENVENUE SUR HI OS</p><h2>Tout ton business<br><span>au même endroit.</span></h2><p>Simple. Puissant. Efficace. Tu dis ce que tu veux faire, HI OS t’emmène au bon endroit.</p></div>
+            <div class="welcome-brand"><img src="./assets/brand-banner.jpg?v=1.1.0" alt="HI MARKETING" /><div><strong>HI MARKETING</strong><small>Digital • Software • Growth</small></div></div>
+          </section>
+
+          <section class="quick-section"><div class="home-section-head"><div><h3>Que veux-tu faire aujourd’hui ?</h3><p>Une action = un clic.</p></div></div><div class="action-grid">
+            ${action('clients','♙','Trouver des clients','Prospection & leads','hunter')}
+            ${action('website','▣','Créer un site web','Vitrine ou e-commerce','web')}
+            ${action('content','✎','Créer un contenu','Affiches, vidéos, visuels','designer')}
+            ${action('projects','▥','Gérer mes projets','Suivi et tâches','web')}
+            ${action('job','✉','Rechercher un emploi','Candidatures optimisées','jobfactory')}
+            ${action('ai','✦','Utiliser l’IA','Assistants spécialisés','automation')}
+          </div></section>
+
+          <section class="home-bottom-grid">
+            <article class="home-panel"><div class="home-section-head"><div><h3>Mon activité</h3><p>Données réelles de HI OS</p></div></div><div class="activity-summary">${metric('Clients actifs',d.clients)}${metric('Missions actives',d.missions)}${metric('Candidatures',d.applications)}${metric('Entretiens',d.interviews)}</div></article>
+            <article class="home-panel"><div class="home-section-head"><div><h3>État du système</h3><p>Ce qui fonctionne maintenant</p></div></div><div class="health-list">${healthRow('Base de données',db,db?'Connectée':'À vérifier')}${healthRow('Gmail',gmail,gmail?'Connecté':'À configurer')}${healthRow('IA',ai,ai?'Clé configurée':'Paiement API en attente')}${healthRow('Sécurité',iso,iso?'Isolation active':'À vérifier')}</div></article>
+          </section>
+        </div>
+
+        <aside class="home-assistant">
+          <div class="assistant-card"><div class="assistant-title"><div class="assistant-face">✦</div><div><h3>HI Assistant</h3><span>● En ligne</span></div></div><p><strong>Bonjour A-D.</strong><br>Dis-moi simplement ce que tu veux obtenir.</p><div class="assistant-list"><button data-command="Trouve de nouveaux clients qualifiés pour HI MARKETING.">✓ Trouver des clients</button><button data-command="Prépare le contenu de la semaine pour HI MARKETING.">✓ Créer du contenu</button><button data-command="Rédige les emails prioritaires du jour.">✓ Rédiger des emails</button><button data-command="Analyse les opportunités et dis-moi lesquelles prioriser.">✓ Analyser les opportunités</button><button data-command="Organise les tâches prioritaires du jour.">✓ Organiser ma journée</button></div><button class="assistant-primary" data-open-assistant>Demander maintenant</button></div>
+          <div class="assistant-mini"><span>◉</span><div><strong>${d.interviews}</strong><small>attention(s) importante(s)</small></div></div>
+          <button class="assistant-validation" id="homeApprovals">Validations en attente <b>${esc($('#approvalCount')?.textContent||'0')}</b></button>
+        </aside>
+      </section>`;
+      bindHome();
     }catch(e){console.warn('dashboard unavailable',e.message);}
   }
-  function chip(label,ok,detail){return `<article class="health-chip ${ok?'ok':'warn'}"><span class="health-dot"></span><div><strong>${esc(label)}</strong><small>${esc(detail)}</small></div></article>`}
-  function service(icon,title,sub,page){return `<button class="service-tile" data-service-page="${esc(page)}"><span class="service-icon">${icon}</span><span><strong>${esc(title)}</strong><small>${esc(sub)}</small></span><b>↗</b></button>`}
-  function kpi(label,val,small){return `<article class="card kpi"><span>${esc(label)}</span><strong>${esc(val)}</strong><small>${esc(small)}</small></article>`}
-  function row(icon,name,text,status){return `<div class="activity-row"><div class="icon">${icon}</div><div><p><strong>${esc(name)}</strong> — ${esc(text)}</p><span>${esc(status)}</span></div></div>`}
-  function bindHero(){
-    document.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>{const i=$('#chatInput');if(i){i.value=b.dataset.command;$('#toggleCopilot')?.click();i.focus();}});
-    document.querySelectorAll('[data-page-target],[data-service-page]').forEach(b=>b.onclick=()=>document.querySelector(`.nav button[data-page="${b.dataset.pageTarget||b.dataset.servicePage}"]`)?.click());
+
+  function action(cls,icon,title,sub,page){return `<button class="action-card ${cls}" data-service-page="${esc(page)}"><span class="action-icon">${icon}</span><span><strong>${esc(title)}</strong><small>${esc(sub)}</small></span><b>→</b></button>`;}
+  function metric(label,val){return `<div><strong>${esc(val)}</strong><span>${esc(label)}</span></div>`;}
+  function healthRow(label,ok,text){return `<div class="health-line"><i class="${ok?'ok':'warn'}"></i><span><strong>${esc(label)}</strong><small>${esc(text)}</small></span></div>`;}
+
+  function bindHome(){
+    document.querySelectorAll('[data-service-page]').forEach(b=>b.onclick=()=>document.querySelector(`.nav button[data-page="${b.dataset.servicePage}"]`)?.click());
+    document.querySelectorAll('[data-command]').forEach(b=>b.onclick=()=>openCommand(b.dataset.command));
+    $('[data-open-assistant]')?.addEventListener('click',()=>$('#toggleCopilot')?.click());
+    $('#homeApprovals')?.addEventListener('click',()=>$('#openApprovals')?.click());
+    $('#homeSearch')?.addEventListener('submit',e=>{e.preventDefault();const v=$('#homeSearchInput')?.value.trim();if(v)openCommand(v);});
   }
+  function openCommand(text){const i=$('#chatInput');if(!i)return;i.value=text;$('#toggleCopilot')?.click();setTimeout(()=>i.focus(),50);}
 
   async function loadApprovals(){const list=$('#approvalList'),badge=$('#approvalCount');try{const data=await api('/api/admin/approvals'),items=data.items||[];badge.textContent=items.length;list.innerHTML=items.length?items.map(x=>`<article data-approval="${esc(x.id)}"><div><strong>${esc(x.action_type)}</strong><span>${new Date(x.requested_at).toLocaleString('fr-FR')}</span></div><p>${esc(JSON.stringify(x.payload))}</p><div><button class="ghost" data-decision="reject">Refuser</button><button data-decision="approve">Valider</button></div></article>`).join(''):'<p style="color:#8e98a5">Aucune validation A3 en attente.</p>';list.querySelectorAll('[data-decision]').forEach(btn=>btn.onclick=async()=>{const card=btn.closest('[data-approval]');await api(`/api/admin/approvals/${card.dataset.approval}/${btn.dataset.decision}`,{method:'POST',body:'{}'});await loadApprovals();refreshDashboard();});}catch{list.innerHTML='<p style="color:#8e98a5">Validations indisponibles.</p>';}}
 
-  function wireCommand(){const form=$('#chatForm'),input=$('#chatInput'),messages=$('#messages');if(!form||form.dataset.live==='1')return;form.dataset.live='1';form.addEventListener('submit',async e=>{e.preventDefault();e.stopImmediatePropagation();const text=input.value.trim();if(!text)return;add('user',esc(text));input.value='';add('agent','Analyse et routage en cours…');const pending=messages.lastElementChild;try{const out=await api('/api/orchestrate',{method:'POST',body:JSON.stringify({command:text})});const routes=(out.route||[]).map(r=>`<span>${esc(r)}</span>`).join('');const actions=(out.actions||[]).slice(0,5).map(a=>`<li>${esc(typeof a==='string'?a:(a.action||a.name||JSON.stringify(a)))}</li>`).join('');pending.innerHTML=`<strong>${esc(out.summary||'Mission prise en charge.')}</strong>${routes?`<div class="route">${routes}</div>`:''}${actions?`<ul class="orchestrator-actions">${actions}</ul>`:''}<small class="orchestrator-mode">${esc(out.mode==='ai-orchestrated'?'AI ORCHESTRATED':'POLICY ROUTED')} • A3 sous validation</small>`;}catch(err){pending.textContent=`Mission non exécutée : ${err.message}`;}},true);function add(type,html){const d=document.createElement('div');d.className=`msg ${type}`;d.innerHTML=html;messages.appendChild(d);messages.scrollTop=messages.scrollHeight;}}
+  function wireCommand(){const form=$('#chatForm'),input=$('#chatInput'),messages=$('#messages');if(!form||form.dataset.live==='1')return;form.dataset.live='1';form.addEventListener('submit',async e=>{e.preventDefault();e.stopImmediatePropagation();const text=input.value.trim();if(!text)return;add('user',esc(text));input.value='';add('agent','Je m’en occupe…');const pending=messages.lastElementChild;try{const out=await api('/api/orchestrate',{method:'POST',body:JSON.stringify({command:text})});const actions=(out.actions||[]).slice(0,5).map(a=>`<li>${esc(typeof a==='string'?a:(a.action||a.name||JSON.stringify(a)))}</li>`).join('');pending.innerHTML=`<strong>${esc(out.summary||'Mission prise en charge.')}</strong>${actions?`<ul class="orchestrator-actions">${actions}</ul>`:''}<small class="orchestrator-mode">${esc(out.mode==='ai-orchestrated'?'IA':'Routage sécurisé')} • validation requise pour les actions sensibles</small>`;}catch(err){pending.textContent=`Je ne peux pas exécuter cette demande maintenant : ${err.message}`;}},true);function add(type,html){const d=document.createElement('div');d.className=`msg ${type}`;d.innerHTML=html;messages.appendChild(d);messages.scrollTop=messages.scrollHeight;}}
 
   document.addEventListener('hios:authenticated',()=>{wireCommand();refreshDashboard();loadApprovals();});
   document.addEventListener('hios:command-view',refreshDashboard);
