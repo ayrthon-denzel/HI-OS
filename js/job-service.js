@@ -37,6 +37,7 @@
   consumeOAuthReturn();
 
   async function renderJobFactory() {
+    window.scrollTo(0, 0);
     document
       .querySelectorAll(".nav button")
       .forEach((b) =>

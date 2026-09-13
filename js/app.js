@@ -96,6 +96,7 @@ function commandPlaceholder() {
   return `<section class="workspace-empty"><div><strong>Préparation de ton espace…</strong><p>HI OS synchronise les données réelles.</p></div></section>`;
 }
 async function render(key = "command") {
+  window.scrollTo(0, 0);
   setActive(key);
   const m = modules.find((x) => x.key === key) || modules[0];
   document.querySelector("#pageTitle").textContent = m.name;
