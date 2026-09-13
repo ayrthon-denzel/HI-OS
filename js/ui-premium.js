@@ -1,34 +1,80 @@
 (() => {
-  const $=s=>document.querySelector(s);
-  const copilot=$('#copilot'),toggle=$('#toggleCopilot'),close=$('#closeCopilot'),minimize=$('#minimizeCopilot'),backdrop=$('#copilotBackdrop');
-  if(!copilot||!toggle||!backdrop)return;
-
-  const setOpen=open=>{
-    copilot.classList.remove('minimized');
-    copilot.classList.toggle('open',open);
-    backdrop.classList.toggle('open',open);
-    toggle.setAttribute('aria-expanded',String(open));
-    copilot.setAttribute('aria-hidden',String(!open));
-    document.body.classList.toggle('copilot-open',open);
-    if(open)setTimeout(()=>$('#chatInput')?.focus(),80);
+  const $ = (s) => document.querySelector(s),
+    panel = $("#copilot"),
+    toggle = $("#toggleCopilot"),
+    backdrop = $("#copilotBackdrop");
+  let returnFocus;
+  function open(value = true) {
+    if (value && !panel.classList.contains("open"))
+      returnFocus = document.activeElement;
+    panel.classList.toggle("open", value);
+    panel.classList.remove("minimized");
+    backdrop.classList.toggle("open", value);
+    toggle.setAttribute("aria-expanded", String(value));
+    panel.setAttribute("aria-hidden", String(!value));
+    panel.inert = !value;
+    panel.setAttribute("aria-modal", "true");
+    $("#minimizeCopilot").setAttribute("aria-label", "Réduire l’assistant");
+    document.body.classList.toggle("copilot-open", value);
+    $(".app-shell .main").inert = value;
+    $("#sidebar").inert = value;
+    $("#minimizeCopilot").innerHTML = window.HIOSIcons.icon("minus");
+    if (value) $("#chatInput").focus();
+    else if (returnFocus?.isConnected) returnFocus.focus();
+  }
+  toggle.onclick = () => open(!panel.classList.contains("open"));
+  $("#closeCopilot").onclick = () => open(false);
+  backdrop.onclick = () => open(false);
+  $("#minimizeCopilot").onclick = () => {
+    const min = !panel.classList.contains("minimized");
+    panel.classList.toggle("minimized", min);
+    backdrop.classList.toggle("open", !min);
+    $(".main").inert = !min;
+    $("#sidebar").inert = !min;
+    document.body.classList.toggle("copilot-open", !min);
+    panel.setAttribute("aria-modal", String(!min));
+    $("#minimizeCopilot").innerHTML = window.HIOSIcons.icon(
+      min ? "expand" : "minus",
+    );
+    $("#minimizeCopilot").setAttribute(
+      "aria-label",
+      min ? "Agrandir l’assistant" : "Réduire l’assistant",
+    );
   };
-  const setMinimized=value=>{
-    if(!copilot.classList.contains('open'))return;
-    copilot.classList.toggle('minimized',value);
-    backdrop.classList.toggle('open',!value);
-    minimize.textContent=value?'□':'−';
-    minimize.setAttribute('aria-label',value?'Agrandir l’assistant':'Réduire l’assistant');
-    minimize.title=value?'Agrandir':'Réduire';
-    document.body.classList.toggle('copilot-open',!value);
+  document.addEventListener("keydown", (e) => {
+    if (!panel.classList.contains("open")) return;
+    if (e.key === "Escape") open(false);
+    if (e.key === "Tab" && !panel.classList.contains("minimized")) {
+      const list = [...panel.querySelectorAll("button,textarea")].filter(
+        (x) => !x.disabled && x.getClientRects().length,
+      );
+      if (e.shiftKey && document.activeElement === list[0]) {
+        e.preventDefault();
+        list.at(-1).focus();
+      } else if (!e.shiftKey && document.activeElement === list.at(-1)) {
+        e.preventDefault();
+        list[0].focus();
+      }
+    }
+  });
+  document.querySelectorAll("[data-cmd]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        open();
+        $("#chatInput").value = b.dataset.cmd;
+        $("#chatInput").focus();
+      }),
+  );
+  document.addEventListener("hios:authenticated", () => {
+    open(false);
+    panel.setAttribute("aria-modal", "true");
+  });
+  window.HIOSAssistant = {
+    open,
+    prepare(text) {
+      open();
+      $("#chatInput").value = text;
+      $("#chatInput").focus();
+    },
   };
-
-  toggle.addEventListener('click',e=>{e.preventDefault();setOpen(!copilot.classList.contains('open'));});
-  close?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setOpen(false);});
-  minimize?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setMinimized(!copilot.classList.contains('minimized'));});
-  backdrop.addEventListener('click',()=>setOpen(false));
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&copilot.classList.contains('open'))setOpen(false);});
-  copilot.addEventListener('click',e=>{if(copilot.classList.contains('minimized')&&!e.target.closest('button'))setMinimized(false);});
-  document.querySelectorAll('[data-cmd]').forEach(btn=>btn.addEventListener('click',()=>{const input=$('#chatInput');if(input)input.value=btn.dataset.cmd||'';setOpen(true);setTimeout(()=>$('#chatForm')?.requestSubmit(),100);}));
-  document.addEventListener('hios:authenticated',()=>setOpen(false));
-  setOpen(false);
 })();
