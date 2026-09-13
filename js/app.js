@@ -11,21 +11,24 @@ const ICONS={
 const icon=n=>`<span class="nav-svg">${ICONS[n]||ICONS.sparkles}</span>`;
 const modules=[
 {section:'Principal',key:'command',icon:'home',name:'Accueil'},
-{section:'Business',key:'crm',icon:'users',name:'Clients',perm:'A2',desc:'Retrouve tes clients, tes prospects, tes relances et tes prochaines actions.',tools:['Clients','Pipeline','Relances','Gmail']},
-{section:'Business',key:'hunter',icon:'target',name:'Prospection',perm:'A2',desc:'Trouve et qualifie de nouvelles entreprises à contacter.',tools:['Recherche','Scoring','Coordonnées','CRM']},
-{section:'Travail',key:'web',icon:'briefcase',name:'Projets',perm:'A2',desc:'Suis les sites, applications, automatisations et livrables en cours.',tools:['Sites','Apps','QA','Déploiements']},
-{section:'Travail',key:'designer',icon:'sparkles',name:'Contenus',perm:'A2',desc:'Crée et organise les visuels, vidéos, publications et campagnes.',tools:['Visuels','Social','Vidéo','Brand']},
-{section:'Outils',key:'automation',icon:'sparkles',name:'IA Assistants',perm:'A2',desc:'Accède aux assistants spécialisés de HI OS et lance une tâche.',tools:['Assistants','Automatisation','Routage','Audit']},
-{section:'Outils',key:'analytics',icon:'calendar',name:'Calendrier',perm:'A0',desc:'Lis les échéances, rendez-vous et éléments à surveiller.',tools:['Planning','Échéances','Suivi']},
-{section:'Outils',key:'proposal',icon:'file',name:'Documents',perm:'A1',desc:'Prépare les devis, propositions, plaquettes et documents commerciaux.',tools:['Devis','Propositions','PDF','Templates']},
-{section:'Système',key:'knowledge',icon:'settings',name:'Paramètres',perm:'A1',desc:'Retrouve les règles, offres, informations officielles et paramètres de HI OS.',tools:['Règles','Sécurité','Marque','Connaissance']}
+{section:'Business',key:'crm',icon:'users',name:'Clients',perm:'A2',desc:'Retrouve tes clients, missions, relances et prochaines actions.'},
+{section:'Business',key:'hunter',icon:'target',name:'Prospection',perm:'A2',desc:'Trouve, qualifie et suis les entreprises à contacter.'},
+{section:'Travail',key:'web',icon:'briefcase',name:'Projets',perm:'A2',desc:'Suis les sites, applications, automatisations et livrables.'},
+{section:'Travail',key:'designer',icon:'sparkles',name:'Contenus',perm:'A2',desc:'Crée et organise les visuels, vidéos, publications et campagnes.'},
+{section:'Outils',key:'automation',icon:'sparkles',name:'IA & Assistants',perm:'A2',desc:'Accède aux agents spécialisés de HI OS.'},
+{section:'Outils',key:'analytics',icon:'calendar',name:'Calendrier',perm:'A0',desc:'Lis les échéances, rendez-vous et relances.'},
+{section:'Outils',key:'proposal',icon:'file',name:'Documents',perm:'A1',desc:'Prépare les devis, propositions, plaquettes et rapports.'},
+{section:'Système',key:'knowledge',icon:'settings',name:'Paramètres',perm:'A1',desc:'Contrôle la configuration, la sécurité et les règles de HI OS.'}
 ];
-const nav=document.querySelector('#nav');let last='';modules.forEach(m=>{if(m.section!==last){const l=document.createElement('div');l.className='section-label';l.textContent=m.section;nav.appendChild(l);last=m.section;}const b=document.createElement('button');b.dataset.page=m.key;b.dataset.label=m.name;b.setAttribute('aria-label',m.name);b.innerHTML=`${icon(m.icon)}<span class="nav-name">${m.name}</span>`;b.onclick=()=>render(m.key);nav.appendChild(b);});
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nav=document.querySelector('#nav');let last='';
+modules.forEach(m=>{if(m.section!==last){const l=document.createElement('div');l.className='section-label';l.textContent=m.section;nav.appendChild(l);last=m.section;}const b=document.createElement('button');b.dataset.page=m.key;b.dataset.label=m.name;b.setAttribute('aria-label',m.name);b.innerHTML=`${icon(m.icon)}<span class="nav-name">${m.name}</span>`;b.onclick=()=>render(m.key);nav.appendChild(b);});
 function setActive(key){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===key));}
-function prompt(text){const input=document.querySelector('#chatInput');if(!input)return;input.value=text;input.focus();document.querySelector('#toggleCopilot')?.click();}
-function commandPlaceholder(){return `<section class="workspace-empty"><div class="workspace-loader"></div><p>Préparation de ton espace…</p></section>`;}
-function modulePage(m){return `<section class="module-simple"><div class="module-simple-head"><div class="module-icon-large">${ICONS[m.icon]||ICONS.sparkles}</div><div><p class="eyebrow">HI OS</p><h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p></div></div><div class="simple-actions"><button data-prompt="${esc(m.name)}, aide-moi à commencer maintenant avec l’action la plus utile."><strong>Commencer maintenant</strong><small>HI OS te guide étape par étape</small></button><button data-prompt="${esc(m.name)}, montre-moi ce qui demande mon attention aujourd’hui."><strong>Voir ce qui doit être fait</strong><small>Uniquement les priorités utiles</small></button><button data-prompt="${esc(m.name)}, fais-moi un résumé simple de la situation."><strong>Faire un point rapide</strong><small>Résumé clair, sans jargon</small></button></div><div class="simple-tools"><h3>Ce module peut t’aider avec</h3><div>${m.tools.map(t=>`<span>${esc(t)}</span>`).join('')}</div></div></section>`;}
-function render(key='command'){setActive(key);const m=modules.find(x=>x.key===key)||modules[0];document.querySelector('#pageTitle').textContent=m.name;const c=document.querySelector('#content');c.innerHTML=key==='command'?commandPlaceholder():modulePage(m);document.querySelectorAll('[data-prompt]').forEach(b=>b.onclick=()=>prompt(b.dataset.prompt));if(key==='command')document.dispatchEvent(new CustomEvent('hios:command-view'));}
+function commandPlaceholder(){return `<section class="workspace-empty"><div><strong>Préparation de ton espace…</strong><p>HI OS synchronise les données réelles.</p></div></section>`;}
+async function render(key='command'){
+  setActive(key);const m=modules.find(x=>x.key===key)||modules[0];document.querySelector('#pageTitle').textContent=m.name;const c=document.querySelector('#content');
+  if(key==='command'){c.innerHTML=commandPlaceholder();document.dispatchEvent(new CustomEvent('hios:command-view'));return;}
+  if(window.HIOSWorkspace?.render){await window.HIOSWorkspace.render(key,m);return;}
+  c.innerHTML=`<section class="workspace-empty"><div><strong>${m.name}</strong><p>${m.desc}</p></div></section>`;
+}
 const dlg=document.querySelector('#approvalDialog');document.querySelector('#openApprovals').onclick=()=>dlg.showModal();document.querySelector('#closeApprovals').onclick=()=>dlg.close();render('command');
-window.HIOSIcons={ICONS,icon};
+window.HIOSIcons={ICONS,icon};window.HIOSNavigate=render;
