@@ -1,0 +1,18 @@
+/* HI OS final layout pass — keep the dashboard useful across tall desktop viewports */
+#content{min-height:calc(100vh - 108px)}
+.home-layout{min-height:calc(100vh - 126px);align-items:stretch!important}
+.home-main{display:flex;flex-direction:column;min-height:100%}
+.home-bottom-grid{flex:1;min-height:210px;align-items:stretch}
+.home-bottom-grid>.home-panel{height:100%;display:flex;flex-direction:column}
+.home-bottom-grid .activity-summary,.home-bottom-grid .health-list{flex:1}
+.activity-summary{min-height:132px}
+.metric-tile{justify-content:center!important}
+.health-list{grid-template-columns:repeat(2,minmax(0,1fr));align-content:stretch}
+.health-line{height:100%;min-height:64px}
+.home-assistant{align-self:stretch;grid-template-rows:auto auto auto;align-content:start}
+.assistant-card{height:auto!important;min-height:0!important}
+.assistant-primary{display:none!important}
+.assistant-list{margin-bottom:0!important}
+.assistant-mini,.assistant-validation{min-height:70px}
+@media(min-width:1500px) and (min-height:900px){.welcome-hero{min-height:430px}.action-card{min-height:118px!important}.home-bottom-grid{min-height:250px}}
+@media(max-width:1180px){#content,.home-layout{min-height:0}.home-main{display:block}.home-bottom-grid{min-height:0}.health-list{grid-template-columns:1fr}}
