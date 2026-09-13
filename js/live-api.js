@@ -33,7 +33,7 @@
             <div class="hero-image" aria-hidden="true"></div>
             <div class="hero-overlay" aria-hidden="true"></div>
             <div class="welcome-copy"><p class="eyebrow">HI OS • PAR HI MARKETING</p><h2>Tout ton business<br><span>au même endroit.</span></h2><p>Clients, prospection, contenus, projets et automatisations. Tu choisis l’objectif, HI OS te montre le chemin.</p><div class="hero-actions"><button data-open-assistant>${icons.spark}<span>Démarrer une tâche</span></button><button class="ghost" data-service-page="crm">Voir mes clients</button></div></div>
-            <div class="hero-brand-card"><img src="./assets/brand-banner.jpg?v=1.3.0" alt="HI MARKETING" /><div><strong>HI MARKETING</strong><span>Digital • Software • Growth</span></div></div>
+            <div class="hero-brand-card"><img src="./assets/hi-marketing-official.jpg?v=1.1.0" alt="HI MARKETING" /><div><strong>HI MARKETING</strong><span>Digital • Software • Growth</span></div></div>
           </section>
 
           <section class="quick-section"><div class="home-section-head"><div><h3>Actions rapides</h3><p>Les raccourcis les plus utiles pour faire avancer HI MARKETING.</p></div></div><div class="action-grid">
