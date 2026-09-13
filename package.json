@@ -1,12 +1,12 @@
 {
   "name": "hi-os",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "HI MARKETING Operating System",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "check": "node --check server.js && node --check server/ai.js && node --check server/google.js && node --check server/job-worker.js && node --check js/auth.js && node --check js/app.js && node --check js/job-service.js && node --check js/live-api.js",
+    "start": "node -r ./server/workspace-hook.js server.js",
+    "check": "node --check server.js && node --check server/ai.js && node --check server/google.js && node --check server/job-worker.js && node --check server/workspace.js && node --check server/workspace-hook.js && node --check js/auth.js && node --check js/workspace.js && node --check js/app.js && node --check js/job-service.js && node --check js/live-api.js",
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "verify": "npm run check && npm run security:audit"
   },
