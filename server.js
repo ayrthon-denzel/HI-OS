@@ -13,6 +13,7 @@ const pdfParse=require('pdf-parse');
 const mammoth=require('mammoth');
 const AI=require('./server/ai');
 const {startJobWorker}=require('./server/job-worker');
+const {MODULES,normalizeModules,modulesForTenant}=require('./server/module-policy');
 
 const app=express();
 const PORT=process.env.PORT||3000;
@@ -93,7 +94,7 @@ async function audit({tenantId=null,actorType='system',actorId=null,action,resou
 async function ensureSchema(){
   if(!pool)return{ok:false,reason:'DATABASE_URL missing'};
   await pool.query(fs.readFileSync(path.join(__dirname,'db','schema.sql'),'utf8'));
-  const t=await pool.query(`INSERT INTO tenants(name,slug) VALUES('HI MARKETING','hi-marketing') ON CONFLICT(slug) DO UPDATE SET name=EXCLUDED.name RETURNING id`);
+  const t=await pool.query(`INSERT INTO tenants(name,slug,space_type,enabled_modules) VALUES('HI MARKETING','hi-marketing','hi_marketing',$1) ON CONFLICT(slug) DO UPDATE SET name=EXCLUDED.name,space_type='hi_marketing',enabled_modules=EXCLUDED.enabled_modules RETURNING id`,[MODULES]);
   const tenantId=t.rows[0].id;
   if(BOOTSTRAP_EMAIL&&BOOTSTRAP_PASSWORD.length>=14){
     const q=await pool.query(`SELECT id FROM users WHERE tenant_id=$1 AND role='ceo' LIMIT 1`,[tenantId]);
@@ -114,12 +115,13 @@ async function session(req){
   const raw=req.cookies?.[COOKIE];
   if(!raw)return null;
   try{
-    const q=await pool.query(`SELECT s.id,s.tenant_id,s.user_id,u.email,u.full_name,u.role,u.status,u.mfa_enabled,u.must_change_password FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() LIMIT 1`,[sha256(raw)]);
+    const q=await pool.query(`SELECT s.id,s.tenant_id,s.user_id,u.email,u.full_name,u.role,u.status,u.mfa_enabled,u.must_change_password,t.name tenant_name,t.slug tenant_slug,t.space_type,t.enabled_modules FROM auth_sessions s JOIN users u ON u.id=s.user_id JOIN tenants t ON t.id=s.tenant_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() LIMIT 1`,[sha256(raw)]);
     return q.rowCount&&q.rows[0].status==='active'?q.rows[0]:null;
   }catch{return null;}
 }
 async function requireAuth(req,res,next){const s=await session(req);if(!s)return res.status(401).json({error:'unauthorized'});req.auth=s;next();}
 function roles(...allowed){return(req,res,next)=>allowed.includes(req.auth?.role)?next():res.status(403).json({error:'forbidden'});}
+function userPayload(u){return{email:u.email,fullName:u.full_name,role:u.role,mfaEnabled:u.mfa_enabled,mustChangePassword:u.must_change_password,company:{id:u.tenant_id,name:u.tenant_name,slug:u.tenant_slug},space:u.space_type==='hi_marketing'?'hi_marketing':'client',enabledModules:modulesForTenant(u)};}
 async function requireAdmin(req,res,next){
   const s=await session(req);
   if(s&&['ceo','admin_ops'].includes(s.role)){req.auth=s;return next();}
@@ -156,8 +158,10 @@ app.post('/api/auth/login',authLimiter,async(req,res)=>{
   const email=clean(req.body?.email,255).toLowerCase(),password=String(req.body?.password||''),otp=clean(req.body?.otp,12);
   if(!emailOk(email)||password.length<8)return res.status(400).json({error:'invalid_credentials'});
   try{
-    const q=await pool.query(`SELECT * FROM users WHERE lower(email)=$1 AND status='active' LIMIT 1`,[email]),u=q.rows[0];
-    if(!u?.password_hash||!await bcrypt.compare(password,u.password_hash)){
+    const q=await pool.query(`SELECT u.*,t.name tenant_name,t.slug tenant_slug,t.space_type,t.enabled_modules FROM users u JOIN tenants t ON t.id=u.tenant_id WHERE lower(u.email)=$1 AND u.status='active'`,[email]);
+    let u=null;
+    for(const candidate of q.rows){if(candidate.password_hash&&await bcrypt.compare(password,candidate.password_hash)){u=candidate;break;}}
+    if(!u){
       await audit({actorType:'auth',actorId:email,action:'login.failed',ip:req.ip});
       return res.status(401).json({error:'invalid_credentials'});
     }
@@ -167,10 +171,63 @@ app.post('/api/auth/login',authLimiter,async(req,res)=>{
     await pool.query(`UPDATE users SET last_login_at=now() WHERE id=$1`,[u.id]);
     res.cookie(COOKIE,raw,{httpOnly:true,secure:true,sameSite:'strict',path:'/',expires});
     await audit({tenantId:u.tenant_id,actorType:'user',actorId:u.id,action:'login.success',ip:req.ip});
-    res.json({ok:true,user:{email:u.email,fullName:u.full_name,role:u.role,mfaEnabled:u.mfa_enabled,mustChangePassword:u.must_change_password}});
+    res.json({ok:true,user:userPayload(u)});
   }catch(e){console.error('login',e);res.status(500).json({error:'login_failed'});}
 });
-app.get('/api/auth/me',requireAuth,(req,res)=>res.json({authenticated:true,user:{email:req.auth.email,fullName:req.auth.full_name,role:req.auth.role,mfaEnabled:req.auth.mfa_enabled,mustChangePassword:req.auth.must_change_password}}));
+app.get('/api/auth/me',requireAuth,(req,res)=>res.json({authenticated:true,user:userPayload(req.auth)}));
+
+function requireHiMarketing(req,res,next){
+  if(req.auth?.space_type==='hi_marketing'&&['ceo','admin_ops'].includes(req.auth.role))return next();
+  return res.status(403).json({error:'hi_marketing_space_required'});
+}
+app.get('/api/admin/companies',requireAuth,requireHiMarketing,async(_req,res)=>{
+  const q=await pool.query(`SELECT id,name,slug,space_type,enabled_modules,created_at FROM tenants ORDER BY space_type DESC,name ASC`);
+  res.json({items:q.rows.map(x=>({...x,enabled_modules:modulesForTenant(x)})),availableModules:MODULES});
+});
+app.post('/api/admin/companies',requireAuth,requireHiMarketing,async(req,res)=>{
+  const name=clean(req.body?.name,160),slug=clean(req.body?.slug,120).toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-|-$/g,'');
+  if(!name||!slug)return res.status(400).json({error:'name_and_slug_required'});
+  try{
+    const enabled=normalizeModules(req.body?.enabledModules);
+    const q=await pool.query(`INSERT INTO tenants(name,slug,space_type,enabled_modules) VALUES($1,$2,'client',$3) RETURNING id,name,slug,space_type,enabled_modules,created_at`,[name,slug,enabled]);
+    await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:'company.created',resourceType:'tenant',resourceId:q.rows[0].id,ip:req.ip});
+    res.status(201).json({item:q.rows[0]});
+  }catch(e){res.status(e.code==='23505'?409:500).json({error:e.code==='23505'?'slug_exists':'company_create_failed'});}
+});
+app.patch('/api/admin/companies/:id/modules',requireAuth,requireHiMarketing,async(req,res)=>{
+  const enabled=normalizeModules(req.body?.enabledModules,[]);
+  const q=await pool.query(`UPDATE tenants SET enabled_modules=$1 WHERE id=$2 AND space_type='client' RETURNING id,name,slug,space_type,enabled_modules`,[enabled,req.params.id]);
+  if(!q.rowCount)return res.status(404).json({error:'company_not_found'});
+  await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:'company.modules.updated',resourceType:'tenant',resourceId:req.params.id,ip:req.ip,metadata:{enabledModules:enabled}});
+  res.json({item:q.rows[0]});
+});
+app.get('/api/admin/companies/:id/users',requireAuth,requireHiMarketing,async(req,res)=>{
+  const company=await pool.query(`SELECT id FROM tenants WHERE id=$1 AND space_type='client'`,[req.params.id]);
+  if(!company.rowCount)return res.status(404).json({error:'company_not_found'});
+  const q=await pool.query(`SELECT id,email,full_name,role,status,must_change_password,last_login_at,created_at FROM users WHERE tenant_id=$1 ORDER BY created_at DESC`,[req.params.id]);
+  res.json({items:q.rows});
+});
+app.post('/api/admin/companies/:id/users',requireAuth,requireHiMarketing,async(req,res)=>{
+  const email=clean(req.body?.email,255).toLowerCase(),fullName=clean(req.body?.fullName,160);
+  if(!emailOk(email)||!fullName)return res.status(400).json({error:'name_and_email_required'});
+  const company=await pool.query(`SELECT id FROM tenants WHERE id=$1 AND space_type='client'`,[req.params.id]);
+  if(!company.rowCount)return res.status(404).json({error:'company_not_found'});
+  const temporaryPassword=`Hi!${randomToken(12)}`;
+  try{
+    const q=await pool.query(`INSERT INTO users(tenant_id,email,full_name,role,status,password_hash,must_change_password) VALUES($1,$2,$3,'client_viewer','active',$4,true) RETURNING id,email,full_name,role,status,must_change_password,created_at`,[req.params.id,email,fullName,await bcrypt.hash(temporaryPassword,12)]);
+    await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:'company.user.created',resourceType:'user',resourceId:q.rows[0].id,ip:req.ip,metadata:{companyId:req.params.id}});
+    res.status(201).json({item:q.rows[0],temporaryPassword});
+  }catch(e){res.status(e.code==='23505'?409:500).json({error:e.code==='23505'?'user_exists':'company_user_create_failed'});}
+});
+app.patch('/api/admin/companies/:companyId/users/:userId/status',requireAuth,requireHiMarketing,async(req,res)=>{
+  const status=req.body?.status;
+  if(!['active','suspended'].includes(status))return res.status(400).json({error:'invalid_status'});
+  const q=await pool.query(`UPDATE users SET status=$1 WHERE id=$2 AND tenant_id=$3 AND role='client_viewer' RETURNING id,email,full_name,role,status`,[status,req.params.userId,req.params.companyId]);
+  if(!q.rowCount)return res.status(404).json({error:'user_not_found'});
+  if(status==='suspended')await pool.query(`UPDATE auth_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL`,[req.params.userId]);
+  await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:`company.user.${status}`,resourceType:'user',resourceId:req.params.userId,ip:req.ip,metadata:{companyId:req.params.companyId}});
+  res.json({item:q.rows[0]});
+});
 app.post('/api/auth/logout',requireAuth,async(req,res)=>{const raw=req.cookies?.[COOKIE];if(raw)await pool.query(`UPDATE auth_sessions SET revoked_at=now() WHERE token_hash=$1`,[sha256(raw)]);res.clearCookie(COOKIE,{path:'/'});res.json({ok:true});});
 app.post('/api/auth/change-password',requireAuth,authLimiter,async(req,res)=>{
   const current=String(req.body?.currentPassword||''),next=String(req.body?.newPassword||'');
