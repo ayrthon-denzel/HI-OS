@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node -r ./server/workspace-hook.js server.js",
-    "check": "node --check server.js && node --check server/ai.js && node --check server/google.js && node --check server/job-worker.js && node --check server/workspace.js && node --check server/workspace-hook.js && node --check js/auth.js && node --check js/workspace.js && node --check js/app.js && node --check js/job-service.js && node --check js/live-api.js && node --check js/icons.js && node --check js/ui.js && node --check js/ui-premium.js",
+    "check": "node --check server.js && node --check server/ai.js && node --check server/google.js && node --check server/job-worker.js && node --check server/module-policy.js && node --check server/workspace.js && node --check server/workspace-hook.js && node --check js/auth.js && node --check js/workspace.js && node --check js/app.js && node --check js/job-service.js && node --check js/live-api.js && node --check js/icons.js && node --check js/ui.js && node --check js/ui-premium.js",
+    "test:foundations": "node --test test/module-policy.test.js",
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "verify": "npm run check && npm run security:audit"
   },
