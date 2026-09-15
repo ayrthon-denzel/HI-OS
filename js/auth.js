@@ -174,6 +174,8 @@
     otp.required = false;
     const name = state.user?.fullName || state.user?.email || "Compte connecté";
     pill.querySelector("span").textContent = name;
+    document.querySelector(".page-heading .eyebrow").textContent = state.user?.company?.name || "HI OS";
+    document.querySelector(".sidebar-help p").textContent = state.user?.space === "hi_marketing" ? "Administration HI MARKETING" : `Espace ${state.user?.company?.name || "client"}`;
     document.querySelector("#userInitials").textContent = name
       .split(/[ @.-]+/)
       .slice(0, 2)
