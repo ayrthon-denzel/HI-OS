@@ -4,8 +4,12 @@ CREATE TABLE IF NOT EXISTS tenants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
+  space_type TEXT NOT NULL DEFAULT 'client' CHECK (space_type IN ('hi_marketing','client')),
+  enabled_modules TEXT[] NOT NULL DEFAULT ARRAY['crm','web','analytics','proposal']::TEXT[],
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS space_type TEXT NOT NULL DEFAULT 'client';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS enabled_modules TEXT[] NOT NULL DEFAULT ARRAY['crm','web','analytics','proposal']::TEXT[];
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
