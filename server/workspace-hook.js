@@ -2,6 +2,7 @@ const express=require('express');
 const crypto=require('crypto');
 const {Pool}=require('pg');
 const workspaceRoutes=require('./workspace');
+const {modulesForTenant}=require('./module-policy');
 
 const DATABASE_URL=process.env.DATABASE_URL||'';
 const pool=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:{rejectUnauthorized:false},max:3,idleTimeoutMillis:30000,connectionTimeoutMillis:8000}):null;
@@ -39,12 +40,18 @@ async function auth(req,res,next){
     await ready;
     const raw=req.cookies?.hi_os_session;
     if(!raw)return res.status(401).json({error:'unauthorized'});
-    const q=await pool.query(`SELECT s.tenant_id,s.user_id,u.role,u.email,u.status FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() LIMIT 1`,[sha256(raw)]);
-    if(!q.rowCount||q.rows[0].status!=='active'||!['ceo','admin_ops'].includes(q.rows[0].role))return res.status(401).json({error:'unauthorized'});
+    const q=await pool.query(`SELECT s.tenant_id,s.user_id,u.role,u.email,u.status,t.space_type,t.enabled_modules FROM auth_sessions s JOIN users u ON u.id=s.user_id JOIN tenants t ON t.id=s.tenant_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() LIMIT 1`,[sha256(raw)]);
+    if(!q.rowCount||q.rows[0].status!=='active')return res.status(401).json({error:'unauthorized'});
     req.auth=q.rows[0];next();
   }catch(e){console.error('workspace_auth',e.message);res.status(503).json({error:'workspace_unavailable'});}
 }
 const tenantFor=async req=>req.auth?.tenant_id||null;
+const pathModule=(path)=>path==='/summary'?null:path.startsWith('/clients')?'crm':path.startsWith('/deals')?'hunter':path.startsWith('/projects')||path.startsWith('/tasks')?'web':path.startsWith('/content')?'designer':path.startsWith('/calendar')?'analytics':path.startsWith('/documents')?'proposal':null;
+const moduleAccess=(req,res,next)=>{
+  const needed=pathModule(req.path);
+  if(!needed||modulesForTenant(req.auth).includes(needed))return next();
+  return res.status(403).json({error:'module_disabled',module:needed});
+};
 const audit=async({tenantId,actorType='user',actorId=null,action,resourceType=null,resourceId=null,metadata={}})=>{try{await pool.query(`INSERT INTO audit_log(tenant_id,actor_type,actor_id,action,resource_type,resource_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)`,[tenantId,actorType,String(actorId||''),action,resourceType,resourceId,JSON.stringify(metadata)]);}catch{}};
 
 const originalUse=express.application.use;
@@ -52,7 +59,7 @@ express.application.use=function(...args){
   const containsStatic=args.some(x=>typeof x==='function'&&x.name==='serveStatic');
   if(containsStatic&&!installed&&pool){
     installed=true;
-    originalUse.call(this,'/api/workspace',auth,workspaceRoutes({pool,tenantFor,audit,clean}));
+    originalUse.call(this,'/api/workspace',auth,moduleAccess,workspaceRoutes({pool,tenantFor,audit,clean}));
     console.log('HI OS workspace routes mounted before static');
   }
   return originalUse.apply(this,args);
