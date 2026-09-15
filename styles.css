@@ -1569,3 +1569,23 @@ dialog::backdrop {
 .workspace-card > .workspace-note {
   margin-top: 16px;
 }
+.module-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 12px;
+}
+.module-checks label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.company-space + .company-space {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.company-users {
+  padding: 0 16px 16px;
+}
+.company-user-status code {
+  overflow-wrap: anywhere;
+}
