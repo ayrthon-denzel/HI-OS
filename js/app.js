@@ -67,11 +67,14 @@ const modules = [
 ];
 const { icon } = window.HIOSIcons;
 const nav = document.querySelector("#nav");
-const extra = document.createElement("details");
-extra.className = "nav-more";
-extra.innerHTML =
-  '<summary>Autres outils</summary><div id="secondaryNav"></div>';
-modules.forEach((m) => {
+function buildNavigation(user = window.HIOSAuth?.user) {
+ nav.innerHTML = "";
+ const extra = document.createElement("details");
+ extra.className = "nav-more";
+ extra.innerHTML = '<summary>Autres outils</summary><div id="secondaryNav"></div>';
+ const enabled = new Set(user?.enabledModules || []);
+ document.querySelector("#toggleCopilot").hidden = user?.space === "client" && !enabled.has("automation");
+ modules.filter((m) => m.key === "command" || user?.space === "hi_marketing" || enabled.has(m.key)).forEach((m) => {
   const b = document.createElement("button");
   b.type = "button";
   b.dataset.page = m.key;
@@ -82,8 +85,10 @@ modules.forEach((m) => {
   if (["analytics", "knowledge"].includes(m.key)) {
     extra.querySelector("div").append(b);
   } else nav.append(b);
-});
-nav.append(extra);
+ });
+ if (extra.querySelector("button")) nav.append(extra);
+}
+buildNavigation();
 function setActive(key) {
   document.querySelectorAll(".nav button").forEach((b) => {
     b.classList.toggle("active", b.dataset.page === key);
@@ -96,6 +101,8 @@ function commandPlaceholder() {
   return `<section class="workspace-empty"><div><strong>Préparation de ton espace…</strong><p>HI OS synchronise les données réelles.</p></div></section>`;
 }
 async function render(key = "command") {
+  const user = window.HIOSAuth?.user;
+  if (key !== "command" && user?.space === "client" && !(user.enabledModules || []).includes(key)) key = "command";
   window.scrollTo(0, 0);
   setActive(key);
   const m = modules.find((x) => x.key === key) || modules[0];
@@ -118,3 +125,7 @@ document.querySelector("#openApprovals").onclick = () => dlg.showModal();
 document.querySelector("#closeApprovals").onclick = () => dlg.close();
 render("command");
 window.HIOSNavigate = render;
+document.addEventListener("hios:authenticated", (e) => {
+  buildNavigation(e.detail);
+  render("command");
+});
