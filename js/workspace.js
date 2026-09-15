@@ -463,24 +463,74 @@
   }
 
   async function renderSettings(c) {
-    const [dash, h] = await Promise.all([
+    const isPlatform = window.HIOSAuth.user?.space === "hi_marketing";
+    const [dash, h, companies] = await Promise.all([
       api("/api/admin/dashboard").catch(() => ({ agentRuns: 0 })),
       fetch("/api/bootstrap-status", { credentials: "same-origin" })
         .then((r) => r.json())
         .catch(() => ({})),
+      isPlatform
+        ? api("/api/admin/companies").catch(() => ({ items: [], availableModules: [] }))
+        : Promise.resolve({ items: [], availableModules: [] }),
     ]);
     const stat = (ok, label, value) =>
       `<div class="status-line"><i class="status-dot-small ${ok ? "" : "warn"}"></i><strong>${esc(label)}</strong><small>${esc(value)}</small></div>`;
     if (c.dataset.view !== "knowledge") return;
-    c.innerHTML = `<section class="workspace-shell">${head("Paramètres", "État technique, sécurité et règles d’exploitation de HI OS.", "Fais un diagnostic complet de la configuration HI OS.", "Explique-moi les paramètres qui nécessitent mon attention.")}${kpis(
+    const moduleLabels = {crm:"Clients",hunter:"Prospection",web:"Projets",designer:"Contenus",automation:"Assistants",analytics:"Calendrier",proposal:"Documents",knowledge:"Paramètres"};
+    const companyPanel = isPlatform ? `<article class="workspace-card"><div class="workspace-toolbar"><div><h3>Entreprises clientes</h3><p class="sub">Gérez les modules et les accès de chaque entreprise.</p></div></div><div class="workspace-list">${companies.items.filter(x=>x.space_type==='client').map(company=>`<section class="company-space" data-company-id="${esc(company.id)}"><form class="company-modules workspace-row" data-company-id="${esc(company.id)}"><div><strong>${esc(company.name)}</strong><small>${esc(company.slug)}</small><div class="module-checks">${companies.availableModules.map(key=>`<label><input type="checkbox" name="modules" value="${esc(key)}" ${(company.enabled_modules||[]).includes(key)?'checked':''}> ${esc(moduleLabels[key]||key)}</label>`).join("")}</div></div><button type="submit">Enregistrer</button></form><div class="company-users" data-users-for="${esc(company.id)}"><button type="button" class="load-company-users" data-company-id="${esc(company.id)}">Gérer les utilisateurs</button></div></section>`).join("") || empty("Aucune entreprise cliente", "Les environnements clients créés apparaîtront ici.", "")}</div><form class="workspace-form" id="companyForm"><input name="name" required placeholder="Nom de l’entreprise"><input name="slug" required pattern="[a-z0-9-]+" placeholder="identifiant-entreprise"><button type="submit">Créer l’environnement</button></form><div id="companyStatus"></div></article>` : "";
+    c.innerHTML = `<section class="workspace-shell">${head("Paramètres", isPlatform ? "Administrez HI MARKETING et les environnements de vos entreprises clientes." : `Paramètres de l’espace ${window.HIOSAuth.user?.company?.name || "client"}.`, "Fais un diagnostic complet de la configuration HI OS.", "Explique-moi les paramètres qui nécessitent mon attention.")}${kpis(
       [
         [h.version || "—", "Version"],
         [dash.agentRuns || 0, "Runs / 24h"],
         [h.adminConfigured ? "Oui" : "Non", "Admin"],
         [h.tenantIsolation ? "Strict" : "À vérifier", "Isolation"],
       ],
-    )}<div class="settings-grid"><div class="settings-panel"><h4>Infrastructure</h4>${stat(h.database, "Base de données", h.database ? "Connectée" : "Indisponible")}${stat(h.gmailConfigured, "Google / Gmail", h.gmailConfigured ? "Configuré" : "À configurer")}${stat(h.aiConfigured, "Moteur IA", h.aiConfigured ? "Clé configurée" : "Crédit API à régler")}${stat(h.cvEncryptionConfigured, "Chiffrement", h.cvEncryptionConfigured ? "Actif" : "À vérifier")}</div><div class="settings-panel"><h4>Sécurité</h4><p>Les actions A3 restent soumises à validation humaine. Les données workspace utilisent le même tenant que le compte connecté. Les secrets ne sont jamais exposés à l’interface.</p><div class="workspace-note">HI OS continue de fonctionner structurellement même lorsqu’un fournisseur IA externe est indisponible.</div></div></div></section>`;
+    )}<div class="settings-grid"><div class="settings-panel"><h4>Infrastructure</h4>${stat(h.database, "Base de données", h.database ? "Connectée" : "Indisponible")}${stat(h.gmailConfigured, "Google / Gmail", h.gmailConfigured ? "Configuré" : "À configurer")}${stat(h.aiConfigured, "Moteur IA", h.aiConfigured ? "Clé configurée" : "Crédit API à régler")}${stat(h.cvEncryptionConfigured, "Chiffrement", h.cvEncryptionConfigured ? "Actif" : "À vérifier")}</div><div class="settings-panel"><h4>Sécurité</h4><p>Les données sont séparées par entreprise. Chaque espace client accède uniquement aux modules qui lui sont attribués.</p><div class="workspace-note">HI OS continue de fonctionner structurellement même lorsqu’un fournisseur IA externe est indisponible.</div></div></div>${companyPanel}</section>`;
     bindCommands();
+    if (isPlatform) {
+      document.querySelectorAll(".company-modules").forEach(form => form.onsubmit = async (event) => {
+        event.preventDefault();
+        const enabledModules = [...new FormData(form).getAll("modules")];
+        const button = form.querySelector("button");
+        button.disabled = true;
+        try {
+          await api(`/api/admin/companies/${form.dataset.companyId}/modules`, {method:"PATCH",body:JSON.stringify({enabledModules})});
+          window.HIOSUI.notify("Modules enregistrés.");
+        } catch (error) { window.HIOSUI.notify(window.HIOSUI.message(error), true); }
+        finally { button.disabled = false; }
+      });
+      document.querySelectorAll(".load-company-users").forEach(button => button.onclick = async () => {
+        const companyId = button.dataset.companyId, box = document.querySelector(`[data-users-for="${companyId}"]`);
+        box.innerHTML = "Chargement…";
+        try {
+          const users = await api(`/api/admin/companies/${companyId}/users`);
+          box.innerHTML = `<div class="workspace-list">${users.items.map(user=>`<div class="workspace-row"><div><strong>${esc(user.full_name)}</strong><small>${esc(user.email)} • ${user.status==='active'?'Actif':'Suspendu'}</small></div><button type="button" class="user-status" data-user-id="${esc(user.id)}" data-company-id="${esc(companyId)}" data-next-status="${user.status==='active'?'suspended':'active'}">${user.status==='active'?'Suspendre':'Réactiver'}</button></div>`).join("") || `<p class="sub">Aucun utilisateur pour cette entreprise.</p>`}</div><form class="workspace-form company-user-form" data-company-id="${esc(companyId)}"><input name="fullName" required placeholder="Nom complet"><input name="email" type="email" required placeholder="utilisateur@entreprise.com"><button type="submit">Créer l’accès</button></form><div class="company-user-status"></div>`;
+          box.querySelectorAll(".user-status").forEach(action => action.onclick = async () => {
+            await api(`/api/admin/companies/${action.dataset.companyId}/users/${action.dataset.userId}/status`, {method:"PATCH",body:JSON.stringify({status:action.dataset.nextStatus})});
+            button.click();
+          });
+          box.querySelector(".company-user-form").onsubmit = async event => {
+            event.preventDefault();
+            const form=event.currentTarget,data=new FormData(form),status=box.querySelector(".company-user-status");
+            status.textContent="Création…";
+            try {
+              const created=await api(`/api/admin/companies/${form.dataset.companyId}/users`, {method:"POST",body:JSON.stringify({fullName:data.get("fullName"),email:data.get("email")})});
+              status.innerHTML=`<div class="workspace-note"><strong>Accès créé.</strong><br>Mot de passe temporaire : <code>${esc(created.temporaryPassword)}</code><br>À transmettre une seule fois à l’utilisateur.</div>`;
+              form.reset();
+            } catch (error) { status.innerHTML=err(error); }
+          };
+        } catch (error) { box.innerHTML=err(error); }
+      });
+      $("#companyForm").onsubmit = async (event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget), status = $("#companyStatus");
+        status.textContent = "Création…";
+        try {
+          await api("/api/admin/companies", {method:"POST",body:JSON.stringify({name:data.get("name"),slug:data.get("slug")})});
+          await renderSettings(c);
+        } catch (error) { status.innerHTML = err(error); }
+      };
+    }
   }
 
   window.HIOSWorkspace = { render };
