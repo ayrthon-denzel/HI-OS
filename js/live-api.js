@@ -108,7 +108,7 @@
         `<button class="priority-item ${urgent ? "urgent" : ""}" data-page-link="${page}">${icon(urgent ? "clock" : "check")}<span class="priority-copy"><strong>${esc(title)}</strong><small>${esc(desc)}</small></span>${icon("arrow")}</button>`;
       $("#content").innerHTML = `<div class="home-layout">
         <section class="today-hero executive-hero">
-          <div class="executive-copy"><p class="eyebrow">HI OS • CENTRE DE COMMANDE</p><h2>Tout est sous contrôle.</h2><p>${failed ? "Certaines informations sont indisponibles. Actualisez pour réessayer." : count ? `Vous avez ${count} priorité${count > 1 ? "s" : ""}. HI OS vous aide à avancer sur l’essentiel.` : "Aucune urgence détectée. Vous pouvez préparer la prochaine étape avec sérénité."}</p><div class="today-date"><span class="live-dot"></span>${esc(today.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</div><button data-command="Organise ma journée à partir des tâches, relances et validations en attente.">${icon("sparkles")}<span>Organiser ma journée</span></button></div>
+          <div class="executive-copy"><p class="eyebrow">CENTRE DE COMMANDE</p><h2>Tout est sous contrôle.</h2><p>${failed ? "Certaines informations sont indisponibles. Actualisez pour réessayer." : count ? `Vous avez ${count} priorité${count > 1 ? "s" : ""}. Concentrez-vous sur l’essentiel.` : "Aucune urgence détectée. Vous pouvez préparer la prochaine étape avec sérénité."}</p><div class="today-date"><span class="live-dot"></span>${esc(today.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</div><button data-command="Organise ma journée à partir des tâches, relances et validations en attente.">${icon("sparkles")}<span>Organiser ma journée</span></button></div>
           <div class="executive-overview" aria-label="Aperçu de votre activité"><div class="overview-heading"><span>Vue d’ensemble</span><small>Mise à jour en direct</small></div><div class="overview-grid"><div><strong>${number(s?.clients)}</strong><span>Clients</span></div><div><strong>${data.deals ? number(deals.filter((d) => !["won", "lost"].includes(d.stage)).length) : "—"}</strong><span>Prospects</span></div><div><strong>${number(s?.projects)}</strong><span>Projets</span></div><div><strong>${number(s?.tasks)}</strong><span>Tâches</span></div></div><div class="overview-focus"><span>Priorité du jour</span><strong>${count ? `${count} action${count > 1 ? "s" : ""} à traiter` : "Activité à jour"}</strong></div></div>
         </section>
         ${failed ? '<div class="workspace-note" role="status">Les chiffres manquants ne sont pas remplacés par zéro. <button id="retryDashboard">Actualiser</button></div>' : ""}
@@ -152,7 +152,7 @@
               `<button class="action-card" data-page-link="${k}">${icon(i)}<span><strong>${t}</strong><small>${d}</small></span></button>`,
           )
           .join("")}</div></section>
-        <p class="home-caption">HI OS · Digital • Software • Growth</p>
+        <p class="home-caption">Digital • Software • Growth</p>
       </div>`;
       document
         .querySelectorAll("[data-page-link]")
