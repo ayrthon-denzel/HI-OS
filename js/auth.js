@@ -101,14 +101,14 @@
   ]);
   const intro = el("section", { class: "auth-intro" }, [
     el("img", {
-      src: "/assets/hi-os-light.svg",
-      alt: "HI OS",
-      width: "190",
+      src: "/assets/hi-os-compact.svg",
+      alt: "",
+      width: "54",
       height: "52",
     }),
     el("p", { class: "auth-signature", text: "DIGITAL • SOFTWARE • GROWTH" }),
     el("div", { class: "auth-statement" }, [
-      el("p", { class: "eyebrow", text: "VOTRE ESPACE HI MARKETING" }),
+      el("p", { class: "eyebrow", text: "VOTRE ESPACE DE TRAVAIL" }),
       el("h1", {}, [
         document.createTextNode("L’essentiel."),
         el("br"),
@@ -118,7 +118,7 @@
         text: "Vos clients, vos projets et vos idées. Un seul espace pour avancer, chaque jour.",
       }),
     ]),
-    el("p", { class: "auth-footer", text: "HI OS / PAR HI MARKETING" }),
+    el("p", { class: "auth-footer", text: "DIGITAL • SOFTWARE • GROWTH" }),
   ]);
   const box = el("section", { class: "auth-box" }, [
     el("img", {
@@ -143,7 +143,7 @@
       class: "auth-lock",
       role: "dialog",
       "aria-modal": "true",
-      "aria-label": "Connexion à HI OS",
+      "aria-label": "Connexion à votre espace de travail",
     },
     el("div", { class: "auth-wrap" }, [intro, box]),
   );
@@ -174,7 +174,7 @@
     otp.required = false;
     const name = state.user?.fullName || state.user?.email || "Compte connecté";
     pill.querySelector("span").textContent = name;
-    document.querySelector(".page-heading .eyebrow").textContent = state.user?.company?.name || "HI OS";
+    document.querySelector(".page-heading .eyebrow").textContent = state.user?.company?.name || "ESPACE DE TRAVAIL";
     document.querySelector(".sidebar-help p").textContent = state.user?.space === "hi_marketing" ? "Administration HI MARKETING" : `Espace ${state.user?.company?.name || "client"}`;
     document.querySelector("#userInitials").textContent = name
       .split(/[ @.-]+/)
