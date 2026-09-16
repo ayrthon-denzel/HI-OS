@@ -1,15 +1,15 @@
 /* HI OS — one design system. Outline icons and logos are original SVG artwork. */
 :root {
-  --navy: #142536;
-  --navy-deep: #0e1c2a;
-  --ivory: #f7f4ed;
-  --white: #fffefa;
-  --gold: #ba9554;
-  --gold-dark: #775822;
-  --gold-soft: #efe6d4;
-  --text: #192a39;
-  --muted: #61707a;
-  --line: #dcdedb;
+  --navy: #101c29;
+  --navy-deep: #08111b;
+  --ivory: #f5f2eb;
+  --white: #fffdf8;
+  --gold: #b89557;
+  --gold-dark: #745827;
+  --gold-soft: #eee5d4;
+  --text: #172331;
+  --muted: #66717a;
+  --line: #dedbd3;
   --panel: var(--white);
   --success: #226247;
   --success-soft: #e6f1e9;
@@ -24,11 +24,11 @@
   --space-6: 32px;
   --space-7: 48px;
   --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 22px;
-  --shadow: 0 8px 30px #14253609;
-  --shadow-modal: 0 24px 90px #0e1c2a30;
-  --sidebar: 236px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --shadow: 0 1px 2px #08111b08, 0 18px 48px #08111b09;
+  --shadow-modal: 0 32px 100px #08111b42;
+  --sidebar: 252px;
   --font:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -40,7 +40,9 @@
 }
 body {
   margin: 0;
-  background: var(--ivory);
+  background:
+    radial-gradient(circle at 88% 0%, #ffffff 0, transparent 27rem),
+    var(--ivory);
   color: var(--text);
   font: 15px/1.55 var(--font);
 }
@@ -79,7 +81,8 @@ h2,
 h3,
 h4 {
   line-height: 1.2;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 h1 {
   font-size: 26px;
@@ -245,18 +248,21 @@ body.copilot-open {
   position: sticky;
   top: 0;
   height: 100dvh;
-  background: var(--navy);
+  background:
+    radial-gradient(circle at 50% -8%, #27394a 0, transparent 19rem),
+    linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
   color: var(--ivory);
   display: flex;
   flex-direction: column;
-  padding: 32px 16px 20px;
+  padding: 34px 18px 22px;
+  border-right: 1px solid #c7a66a24;
   overflow: auto;
 }
 .brand-block {
   text-decoration: none;
   display: grid;
   gap: 14px;
-  padding: 0 10px 34px;
+  padding: 0 12px 38px;
 }
 .brand-block > span {
   font-size: 9px;
@@ -276,19 +282,21 @@ body.copilot-open {
   min-height: 47px;
   background: transparent;
   border: 1px solid transparent;
-  color: #c4ced6;
+  color: #b9c4cd;
   font-size: 14px;
   font-weight: 500;
-  padding: 11px 14px;
+  padding: 11px 15px;
+  position: relative;
 }
 .nav button:hover {
-  background: #20364a;
+  background: #ffffff0b;
   color: var(--white);
 }
 .nav button.active {
-  background: #2b3c49;
-  color: #f3d6a0;
-  border-color: #59604f;
+  background: linear-gradient(90deg, #c7a66a17, #ffffff09);
+  color: #f1d9aa;
+  border-color: #c7a66a3d;
+  box-shadow: inset 3px 0 #c7a66a;
 }
 .nav-more {
   margin-top: 22px;
@@ -338,18 +346,18 @@ body.copilot-open {
 }
 .main {
   min-width: 0;
-  padding: 0 clamp(20px, 3vw, 48px) 48px;
-  max-width: 1800px;
+  padding: 0 clamp(24px, 3.6vw, 58px) 58px;
+  max-width: 1720px;
   width: 100%;
   margin: 0 auto;
 }
 .topbar {
-  min-height: 108px;
+  min-height: 112px;
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 30px;
+  border-bottom: 1px solid #d7d3ca;
+  margin-bottom: 36px;
 }
 .page-heading {
   flex: 1;
@@ -381,7 +389,8 @@ body.copilot-open {
   color: var(--gold-dark);
   width: 42px;
   height: 42px;
-  border-radius: 50%;
+  border-radius: 12px;
+  border: 1px solid #c6a56a66;
   font-weight: 650;
   font-size: 13px;
 }
@@ -439,6 +448,8 @@ body.copilot-open {
   background: var(--white);
   padding: 20px 24px;
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top-color: #c3a16573;
 }
 .workspace-kpi strong {
   font-size: 30px;
@@ -465,7 +476,7 @@ body.copilot-open {
   min-width: 0;
   border: 1px solid var(--line);
   background: var(--white);
-  padding: 24px;
+  padding: 26px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -676,18 +687,38 @@ body.copilot-open {
 }
 /* Today: practical first, quiet brand presence. */
 .today-hero {
-  background: var(--navy);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(105deg, #08111bf2 0%, #101f2eea 58%, #1e3446d9 100%),
+    radial-gradient(circle at 80% 30%, #b8955738, transparent 24rem);
   color: var(--ivory);
   border-radius: var(--radius-lg);
-  padding: 30px 34px;
+  padding: 38px 40px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
+  border: 1px solid #c2a26642;
+  box-shadow: 0 24px 60px #08111b1f;
+}
+.today-hero:after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 330px;
+  height: 330px;
+  right: -100px;
+  top: -190px;
+  border: 1px solid #d4b77930;
+  border-radius: 50%;
+  box-shadow: 0 0 0 46px #d4b77908, 0 0 0 92px #d4b77905;
 }
 .today-hero h2 {
-  font-size: 36px;
-  font-weight: 500;
+  font-size: clamp(36px, 3.2vw, 48px);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
   margin: 6px 0 12px;
 }
 .today-hero p {
@@ -701,9 +732,10 @@ body.copilot-open {
   font-size: 10px;
 }
 .today-hero button {
-  background: #d8bd89;
+  background: linear-gradient(135deg, #e0c590, #b89557);
   border-color: #d8bd89;
   color: var(--navy);
+  box-shadow: 0 10px 30px #00000026;
 }
 .today-date {
   font-size: 12px;
@@ -713,12 +745,13 @@ body.copilot-open {
 .home-search {
   border: 1px solid var(--line);
   background: var(--white);
-  padding: 20px;
+  padding: 22px 24px;
   border-radius: var(--radius);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 16px;
   align-items: end;
+  box-shadow: var(--shadow);
 }
 .home-search > .nav-svg {
   padding-bottom: 12px;
@@ -813,6 +846,13 @@ body.copilot-open {
   min-width: 0;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  border-color: #dcd8cf;
+  transition: transform var(--motion), box-shadow var(--motion), border-color var(--motion);
+}
+.action-card:hover {
+  transform: translateY(-2px);
+  border-color: #b8955770;
+  box-shadow: 0 20px 52px #08111b12;
 }
 .action-card > .nav-svg {
   color: var(--gold-dark);
@@ -1069,7 +1109,9 @@ dialog::backdrop {
   grid-template-columns: 1fr 1fr;
 }
 .auth-intro {
-  background: var(--navy);
+  background:
+    radial-gradient(circle at 82% 18%, #b8955729, transparent 20rem),
+    linear-gradient(145deg, #08111b 0%, #122334 62%, #1a3042 100%);
   padding: clamp(36px, 5vw, 80px);
   color: var(--ivory);
   display: flex;
@@ -1084,8 +1126,9 @@ dialog::backdrop {
   bottom: -250px;
   width: 580px;
   height: 580px;
-  border: 1px solid #bda37533;
+  border: 1px solid #d0b2773d;
   border-radius: 50%;
+  box-shadow: 0 0 0 68px #d0b27708, 0 0 0 136px #d0b27705;
   pointer-events: none;
 }
 .auth-signature {
@@ -1129,14 +1172,15 @@ dialog::backdrop {
   align-self: center;
   justify-self: center;
   width: min(410px, 100%);
-  padding: 48px 24px;
+  padding: 54px 34px;
 }
 .auth-symbol {
   margin-bottom: 32px;
 }
 .auth-box h2 {
-  font-size: 29px;
-  font-weight: 550;
+  font-size: 32px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
   margin-bottom: 12px;
 }
 .auth-box > p:not(.eyebrow) {
