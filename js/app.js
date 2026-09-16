@@ -38,7 +38,7 @@ const modules = [
     icon: "sparkles",
     name: "Assistants",
     perm: "A2",
-    desc: "Accède aux agents spécialisés de HI OS.",
+    desc: "Accède à vos assistants spécialisés.",
   },
   {
     section: "Votre activité",
@@ -62,7 +62,7 @@ const modules = [
     icon: "settings",
     name: "Paramètres",
     perm: "A1",
-    desc: "Contrôle la configuration, la sécurité et les règles de HI OS.",
+    desc: "Contrôle la configuration, la sécurité et les règles de votre espace.",
   },
 ];
 const { icon } = window.HIOSIcons;
@@ -98,7 +98,7 @@ function setActive(key) {
   window.HIOSUI?.closeMenu();
 }
 function commandPlaceholder() {
-  return `<section class="workspace-empty"><div><strong>Préparation de ton espace…</strong><p>HI OS synchronise les données réelles.</p></div></section>`;
+  return `<section class="workspace-empty"><div><strong>Préparation de votre espace…</strong><p>Synchronisation des données en cours.</p></div></section>`;
 }
 async function render(key = "command") {
   const user = window.HIOSAuth?.user;
