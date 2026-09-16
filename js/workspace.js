@@ -30,7 +30,7 @@
     Documents: ["newDocBtn", "Ajouter un document"],
   };
   const head = (title, desc, primary, secondary = "") =>
-    `<section class="workspace-head"><div><p class="eyebrow">HI OS • HI MARKETING</p><h2>${esc(title)}</h2><p>${esc(desc)}</p></div><div class="workspace-head-actions">${secondary ? `<button data-workspace-command="${esc(secondary)}">Assistant</button>` : ""}${actions[title] ? `<button class="primary" data-primary-target="${actions[title][0]}">${actions[title][1]}</button>` : primary ? `<button class="primary" data-workspace-command="${esc(primary)}">Demander à HI Assistant</button>` : ""}</div></section>`;
+    `<section class="workspace-head"><div><p class="eyebrow">ESPACE DE TRAVAIL</p><h2>${esc(title)}</h2><p>${esc(desc)}</p></div><div class="workspace-head-actions">${secondary ? `<button data-workspace-command="${esc(secondary)}">Assistant</button>` : ""}${actions[title] ? `<button class="primary" data-primary-target="${actions[title][0]}">${actions[title][1]}</button>` : primary ? `<button class="primary" data-workspace-command="${esc(primary)}">Ouvrir l’assistant</button>` : ""}</div></section>`;
   const kpis = (items) =>
     `<section class="workspace-kpis">${items.map(([v, l]) => `<div class="workspace-kpi"><strong>${esc(v)}</strong><span>${esc(l)}</span></div>`).join("")}</section>`;
   const empty = (title, text, cmd) =>
@@ -84,7 +84,7 @@
   async function render(key, m) {
     const c = $("#content");
     c.innerHTML =
-      '<section class="workspace-empty"><div><strong>Chargement…</strong><p>HI OS prépare les données utiles.</p></div></section>';
+      '<section class="workspace-empty"><div><strong>Chargement…</strong><p>Préparation des données utiles.</p></div></section>';
     try {
       if (key === "crm") return await renderClients(c);
       if (key === "hunter") return await renderDeals(c);
