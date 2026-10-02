@@ -1,15 +1,15 @@
 /* HI OS — one design system. Outline icons and logos are original SVG artwork. */
 :root {
-  --navy: #16191d;
-  --navy-deep: #0d0f12;
-  --ivory: #f2f0eb;
-  --white: #fbfaf7;
-  --gold: #c3a46b;
-  --gold-dark: #7e6336;
-  --gold-soft: #eee8dc;
-  --text: #1b1d20;
-  --muted: #6f706f;
-  --line: #dedbd4;
+  --navy: #17102d;
+  --navy-deep: #0b0718;
+  --ivory: #0f0a20;
+  --white: #1b1432;
+  --gold: #9b72ff;
+  --gold-dark: #c3afff;
+  --gold-soft: #2c204d;
+  --text: #f8f5ff;
+  --muted: #ada3bf;
+  --line: #ffffff18;
   --panel: var(--white);
   --success: #226247;
   --success-soft: #e6f1e9;
@@ -26,21 +26,24 @@
   --radius-sm: 8px;
   --radius: 16px;
   --radius-lg: 24px;
-  --shadow: 0 1px 2px #08111b08, 0 18px 48px #08111b09;
-  --shadow-modal: 0 32px 100px #08111b42;
+  --shadow: 0 18px 48px #06030f38;
+  --shadow-modal: 0 32px 100px #05020d80;
   --sidebar: 252px;
   --font:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   --motion: 160ms;
-  color-scheme: light;
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: var(--ivory);
+  background:
+    radial-gradient(circle at 82% 3%, #6136c52b 0, transparent 30rem),
+    radial-gradient(circle at 12% 100%, #244fe81c 0, transparent 32rem),
+    var(--ivory);
   color: var(--text);
   font: 15px/1.55 var(--font);
 }
@@ -154,7 +157,7 @@ select {
   width: 100%;
   min-width: 0;
   min-height: 46px;
-  border: 1px solid #bdc5c7;
+  border: 1px solid #ffffff20;
   background: var(--white);
   color: var(--text);
   padding: 11px 12px;
@@ -162,7 +165,7 @@ select {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #758089;
+  color: #8e84a3;
 }
 textarea {
   resize: vertical;
@@ -246,7 +249,9 @@ body.copilot-open {
   position: sticky;
   top: 0;
   height: 100dvh;
-  background: linear-gradient(180deg, #171a1e 0%, #0d0f12 100%);
+  background:
+    radial-gradient(circle at 50% -8%, #5e38b82a, transparent 20rem),
+    linear-gradient(180deg, #160f2b 0%, #090614 100%);
   color: var(--ivory);
   display: flex;
   flex-direction: column;
@@ -270,12 +275,12 @@ body.copilot-open {
   display: block;
 }
 .brand-copy strong {
-  color: #f7f4ed;
+  color: #fbf9ff;
   font: 400 17px/1.2 Georgia, "Times New Roman", serif;
   letter-spacing: 0.01em;
 }
 .brand-copy small {
-  color: #9a9b9a;
+  color: #a79abb;
   font-size: 8px;
   letter-spacing: 0.08em;
   margin-top: 4px;
@@ -304,10 +309,10 @@ body.copilot-open {
   color: var(--white);
 }
 .nav button.active {
-  background: #ffffff0b;
+  background: linear-gradient(90deg, #9b72ff22, #ffffff08);
   color: #f6f2e9;
   border-color: #ffffff12;
-  box-shadow: inset 2px 0 #c3a46b;
+  box-shadow: inset 2px 0 #9b72ff;
 }
 .nav-more {
   margin-top: 22px;
@@ -367,7 +372,7 @@ body.copilot-open {
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid #d9d6cf;
+  border-bottom: 1px solid #ffffff14;
   margin-bottom: 36px;
 }
 .page-heading {
@@ -386,7 +391,7 @@ body.copilot-open {
   gap: 10px;
 }
 .assistant-launch {
-  background: #1a1d21;
+  background: linear-gradient(135deg, #8152ef, #4f6ff5);
   color: var(--white);
   border-color: var(--navy);
 }
@@ -396,12 +401,12 @@ body.copilot-open {
 .profile {
   display: grid;
   place-items: center;
-  background: #1a1d21;
-  color: #f1dfbc;
+  background: #ffffff0d;
+  color: #d9ccff;
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  border: 1px solid #c3a46b55;
+  border: 1px solid #9b72ff55;
   font-weight: 650;
   font-size: 13px;
 }
@@ -459,12 +464,12 @@ body.copilot-open {
   gap: 16px;
 }
 .workspace-kpi {
-  border: 0;
+  border: 1px solid var(--line);
   background: var(--white);
   padding: 20px 24px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  border-top: 2px solid #c3a46b52;
+  border-top: 2px solid #9b72ff70;
 }
 .workspace-kpi strong {
   font-size: 30px;
@@ -489,11 +494,12 @@ body.copilot-open {
 .home-panel,
 .settings-panel {
   min-width: 0;
-  border: 1px solid #e1ded7;
+  border: 1px solid var(--line);
   background: var(--white);
   padding: 26px;
   border-radius: var(--radius);
-  box-shadow: 0 12px 36px #17191c0a;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
 }
 .workspace-card h3,
 .card h3 {
@@ -562,9 +568,9 @@ body.copilot-open {
   display: grid;
   place-items: center;
   text-align: center;
-  border: 1px dashed #c9ceca;
+  border: 1px dashed #ffffff24;
   border-radius: var(--radius);
-  background: #f9f8f3;
+  background: #ffffff05;
   padding: 24px;
 }
 .workspace-empty strong {
@@ -706,8 +712,8 @@ body.copilot-open {
   isolation: isolate;
   overflow: hidden;
   background:
-    radial-gradient(circle at 92% 8%, #c3a46b24 0, transparent 25rem),
-    linear-gradient(118deg, #111418 0%, #1d2024 58%, #282b2e 100%);
+    radial-gradient(circle at 92% 8%, #a87cff45 0, transparent 25rem),
+    linear-gradient(118deg, #17102f 0%, #271650 58%, #312065 100%);
   color: var(--ivory);
   border-radius: var(--radius-lg);
   padding: 38px 40px;
@@ -750,9 +756,9 @@ body.copilot-open {
   font-size: 10px;
 }
 .today-hero button {
-  background: #f4efe5;
-  border-color: #f4efe5;
-  color: #17191d;
+  background: linear-gradient(135deg, #b28bff, #6f6fff);
+  border-color: transparent;
+  color: white;
   box-shadow: 0 10px 30px #00000026;
   display: inline-flex;
   align-items: center;
@@ -832,7 +838,7 @@ body.copilot-open {
   display: block;
 }
 .overview-grid strong {
-  color: #e3c994;
+  color: #d9c8ff;
   font: 400 32px/1 Georgia, "Times New Roman", serif;
 }
 .overview-grid span {
@@ -863,7 +869,7 @@ body.copilot-open {
   margin-top: 5px;
 }
 .home-search {
-  border: 1px solid #ddd9d1;
+  border: 1px solid var(--line);
   background: var(--white);
   padding: 22px 24px;
   border-radius: var(--radius);
@@ -966,12 +972,12 @@ body.copilot-open {
   min-width: 0;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  border-color: #dfdcd5;
+  border-color: var(--line);
   transition: transform var(--motion), box-shadow var(--motion), border-color var(--motion);
 }
 .action-card:hover {
   transform: translateY(-2px);
-  border-color: #c3a46b70;
+  border-color: #9b72ff88;
   box-shadow: 0 20px 52px #08111b12;
 }
 .action-card > .nav-svg {
@@ -1017,7 +1023,7 @@ dialog {
   box-shadow: var(--shadow-modal);
 }
 dialog::backdrop {
-  background: #0e1c2a88;
+  background: #080413cc;
 }
 .dialog-head {
   display: flex;
@@ -1230,8 +1236,8 @@ dialog::backdrop {
 }
 .auth-intro {
   background:
-    radial-gradient(circle at 82% 18%, #b8955729, transparent 20rem),
-    linear-gradient(145deg, #08111b 0%, #122334 62%, #1a3042 100%);
+    radial-gradient(circle at 82% 18%, #9b72ff3b, transparent 20rem),
+    linear-gradient(145deg, #0c0719 0%, #1b1038 62%, #2b1857 100%);
   padding: clamp(36px, 5vw, 80px);
   color: var(--ivory);
   display: flex;
