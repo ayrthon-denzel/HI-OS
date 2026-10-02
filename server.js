@@ -13,6 +13,7 @@ const pdfParse=require('pdf-parse');
 const mammoth=require('mammoth');
 const AI=require('./server/ai');
 const {startJobWorker}=require('./server/job-worker');
+const {listRecentMessages}=require('./server/google');
 const {MODULES,normalizeModules,modulesForTenant}=require('./server/module-policy');
 
 const app=express();
@@ -122,6 +123,7 @@ async function session(req){
 async function requireAuth(req,res,next){const s=await session(req);if(!s)return res.status(401).json({error:'unauthorized'});req.auth=s;next();}
 function roles(...allowed){return(req,res,next)=>allowed.includes(req.auth?.role)?next():res.status(403).json({error:'forbidden'});}
 function userPayload(u){return{email:u.email,fullName:u.full_name,role:u.role,mfaEnabled:u.mfa_enabled,mustChangePassword:u.must_change_password,company:{id:u.tenant_id,name:u.tenant_name,slug:u.tenant_slug},space:u.space_type==='hi_marketing'?'hi_marketing':'client',enabledModules:modulesForTenant(u)};}
+const requireEnabledModule=key=>(req,res,next)=>modulesForTenant(req.auth).includes(key)?next():res.status(403).json({error:'module_disabled',module:key});
 async function requireAdmin(req,res,next){
   const s=await session(req);
   if(s&&['ceo','admin_ops'].includes(s.role)){req.auth=s;return next();}
@@ -375,6 +377,63 @@ app.post('/api/orchestrate',requireAuth,async(req,res)=>{
   res.json({ok:true,...output,mode:process.env.OPENAI_API_KEY?'ai-orchestrated':'policy-routed'});
 });
 
+function mailClassification(message){
+  const text=`${message.subject||''} ${message.from||''} ${message.snippet||''}`.toLowerCase();
+  let category='autre',priority='normal';
+  if(/facture|paiement|devis|invoice|échéance|virement/.test(text))category='finance';
+  else if(/client|projet|livrable|validation|contrat|rendez-vous/.test(text))category='client';
+  else if(/candidature|entretien|recrutement|poste|emploi/.test(text))category='carrière';
+  else if(/newsletter|unsubscribe|désabonner|promotion|offre spéciale/.test(text))category='newsletter';
+  else if(/prospect|proposition|partenariat|commercial/.test(text))category='opportunité';
+  if(/urgent|immédiat|aujourd'hui|deadline|retard|dernier rappel/.test(text))priority='urgent';
+  else if(/validation|action requise|à confirmer|échéance|rendez-vous/.test(text))priority='high';
+  else if(category==='newsletter')priority='low';
+  return{category,priority};
+}
+async function tenantMailIntegration(tenantId){
+  const q=await pool.query(`SELECT * FROM integrations WHERE tenant_id=$1 AND mission_id IS NULL AND provider='google_gmail' AND status='active' ORDER BY updated_at DESC LIMIT 1`,[tenantId]);
+  return q.rows[0]||null;
+}
+app.get('/api/mail/status',requireAuth,requireEnabledModule('mail'),async(req,res)=>{
+  const integration=await tenantMailIntegration(req.auth.tenant_id);
+  res.json({connected:Boolean(integration),account:integration?.external_account||null,status:integration?.status||'disconnected',aiConfigured:Boolean(process.env.OPENAI_API_KEY)});
+});
+app.get('/api/mail/messages',requireAuth,requireEnabledModule('mail'),async(req,res)=>{
+  try{
+    const integration=await tenantMailIntegration(req.auth.tenant_id);
+    if(!integration)return res.status(409).json({error:'gmail_required'});
+    const result=await listRecentMessages(decryptSecret(integration.token_ref),clean(req.query.q,180)||'newer_than:14d');
+    await pool.query(`UPDATE integrations SET token_ref=$1,updated_at=now() WHERE id=$2`,[encryptSecret(result.tokens),integration.id]);
+    const states=await pool.query(`SELECT gmail_message_id,category,workflow_status,priority,ai_summary FROM mail_state WHERE tenant_id=$1`,[req.auth.tenant_id]);
+    const byId=new Map(states.rows.map(x=>[x.gmail_message_id,x]));
+    const items=result.messages.slice(0,50).map(message=>{const saved=byId.get(message.id),auto=mailClassification(message);return{...message,category:saved?.category||auto.category,workflowStatus:saved?.workflow_status||'inbox',priority:saved?.priority||auto.priority,aiSummary:saved?.ai_summary||message.snippet};});
+    res.json({items,account:integration.external_account});
+  }catch(e){console.error('mail_messages',e.message);res.status(502).json({error:e.message||'gmail_unavailable'});}
+});
+app.patch('/api/mail/messages/:id',requireAuth,requireEnabledModule('mail'),async(req,res)=>{
+  const status=['inbox','action','waiting','done','archived'].includes(req.body?.workflowStatus)?req.body.workflowStatus:'inbox';
+  const category=clean(req.body?.category,40)||'autre',priority=['low','normal','high','urgent'].includes(req.body?.priority)?req.body.priority:'normal';
+  const q=await pool.query(`INSERT INTO mail_state(tenant_id,gmail_message_id,thread_id,category,workflow_status,priority,ai_summary) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(tenant_id,gmail_message_id) DO UPDATE SET category=EXCLUDED.category,workflow_status=EXCLUDED.workflow_status,priority=EXCLUDED.priority,ai_summary=EXCLUDED.ai_summary,updated_at=now() RETURNING *`,[req.auth.tenant_id,clean(req.params.id,180),clean(req.body?.threadId,180)||null,category,status,priority,clean(req.body?.aiSummary,1000)||null]);
+  await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:'mail.state.updated',resourceType:'gmail_message',resourceId:req.params.id,ip:req.ip,metadata:{status,category,priority}});
+  res.json({item:q.rows[0]});
+});
+app.post('/api/mail/bulk',requireAuth,requireEnabledModule('mail'),async(req,res)=>{
+  const ids=safeArray(req.body?.ids,50),status=['action','waiting','done','archived'].includes(req.body?.workflowStatus)?req.body.workflowStatus:'action';
+  if(!ids.length)return res.status(400).json({error:'messages_required'});
+  for(const id of ids)await pool.query(`INSERT INTO mail_state(tenant_id,gmail_message_id,category,workflow_status,priority) VALUES($1,$2,'autre',$3,'normal') ON CONFLICT(tenant_id,gmail_message_id) DO UPDATE SET workflow_status=EXCLUDED.workflow_status,updated_at=now()`,[req.auth.tenant_id,id,status]);
+  await audit({tenantId:req.auth.tenant_id,actorType:'user',actorId:req.auth.user_id,action:'mail.bulk.updated',resourceType:'gmail_message',ip:req.ip,metadata:{count:ids.length,status}});
+  res.json({ok:true,count:ids.length,status});
+});
+app.get('/api/mail/google/start',requireAuth,requireEnabledModule('mail'),async(req,res)=>{
+  if(!process.env.GOOGLE_CLIENT_ID||!process.env.GOOGLE_CLIENT_SECRET)return res.status(503).json({error:'google_oauth_not_configured'});
+  if(!TOKEN_KEY)return res.status(503).json({error:'token_encryption_not_configured'});
+  const state=randomToken(24),redirect=`${req.protocol}://${req.get('host')}/api/oauth/google/callback`;
+  res.cookie('hi_os_oauth_state',state,{httpOnly:true,secure:true,sameSite:'lax',maxAge:600000,path:'/api/oauth/google'});
+  res.cookie('hi_os_oauth_context',encryptSecret({kind:'workspace_mail',tenantId:req.auth.tenant_id}),{httpOnly:true,secure:true,sameSite:'lax',maxAge:600000,path:'/api/oauth/google'});
+  const p=new URLSearchParams({client_id:process.env.GOOGLE_CLIENT_ID,redirect_uri:redirect,response_type:'code',access_type:'offline',prompt:'consent',state,scope:['openid','email','https://www.googleapis.com/auth/gmail.readonly','https://www.googleapis.com/auth/gmail.send'].join(' ')});
+  res.json({url:`https://accounts.google.com/o/oauth2/v2/auth?${p}`});
+});
+
 app.get('/api/admin/integrations/google/start',requireAdmin,async(req,res)=>{
   const missionId=clean(req.query.missionId,80);
   if(!process.env.GOOGLE_CLIENT_ID||!process.env.GOOGLE_CLIENT_SECRET)return res.status(503).json({error:'google_oauth_not_configured'});
@@ -389,6 +448,8 @@ app.get('/api/admin/integrations/google/start',requireAdmin,async(req,res)=>{
 });
 app.get('/api/oauth/google/callback',async(req,res)=>{
   const missionId=req.cookies?.hi_os_oauth_mission;
+  let oauthContext=null;
+  try{oauthContext=req.cookies?.hi_os_oauth_context?decryptSecret(req.cookies.hi_os_oauth_context):null;}catch{}
   if(!req.query.code||!req.query.state||req.query.state!==req.cookies?.hi_os_oauth_state){
     console.warn('google_oauth_callback_invalid_state');
     return res.status(400).send('OAuth state invalide.');
@@ -398,16 +459,25 @@ app.get('/api/oauth/google/callback',async(req,res)=>{
     const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code:String(req.query.code),client_id:process.env.GOOGLE_CLIENT_ID||'',client_secret:process.env.GOOGLE_CLIENT_SECRET||'',redirect_uri:redirect,grant_type:'authorization_code'})});
     const tokens=await r.json();
     if(!r.ok)throw new Error('oauth_exchange_failed');
-    const m=await pool.query(`SELECT tenant_id FROM missions WHERE id=$1 LIMIT 1`,[missionId]);
-    if(!m.rowCount)throw new Error('mission_missing');
     const account=await googleProfile(tokens.access_token);
-    await pool.query(`UPDATE integrations SET status='revoked',updated_at=now() WHERE mission_id=$1 AND tenant_id=$2 AND provider='google_gmail' AND status='active'`,[missionId,m.rows[0].tenant_id]);
-    await pool.query(`INSERT INTO integrations(tenant_id,mission_id,provider,external_account,scopes,token_ref,status) VALUES($1,$2,'google_gmail',$3,$4,$5,'active')`,[m.rows[0].tenant_id,missionId,account,['gmail.readonly','gmail.send'],encryptSecret(tokens)]);
-    await audit({tenantId:m.rows[0].tenant_id,actorType:'integration',actorId:account||'google_gmail',action:'gmail.oauth_connected',resourceType:'mission',resourceId:missionId,ip:req.ip,metadata:{account,scopes:['gmail.readonly','gmail.send']}});
-    console.log('google_oauth_connected',missionId,account||'account_unknown');
+    if(oauthContext?.kind==='workspace_mail'&&oauthContext.tenantId){
+      const tenant=await pool.query(`SELECT id FROM tenants WHERE id=$1 LIMIT 1`,[oauthContext.tenantId]);
+      if(!tenant.rowCount)throw new Error('tenant_missing');
+      await pool.query(`UPDATE integrations SET status='revoked',updated_at=now() WHERE tenant_id=$1 AND mission_id IS NULL AND provider='google_gmail' AND status='active'`,[oauthContext.tenantId]);
+      await pool.query(`INSERT INTO integrations(tenant_id,mission_id,provider,external_account,scopes,token_ref,status) VALUES($1,NULL,'google_gmail',$2,$3,$4,'active')`,[oauthContext.tenantId,account,['gmail.readonly','gmail.send'],encryptSecret(tokens)]);
+      await audit({tenantId:oauthContext.tenantId,actorType:'integration',actorId:account||'google_gmail',action:'gmail.workspace_connected',resourceType:'tenant',resourceId:oauthContext.tenantId,ip:req.ip,metadata:{account}});
+    }else{
+      const m=await pool.query(`SELECT tenant_id FROM missions WHERE id=$1 LIMIT 1`,[missionId]);
+      if(!m.rowCount)throw new Error('mission_missing');
+      await pool.query(`UPDATE integrations SET status='revoked',updated_at=now() WHERE mission_id=$1 AND tenant_id=$2 AND provider='google_gmail' AND status='active'`,[missionId,m.rows[0].tenant_id]);
+      await pool.query(`INSERT INTO integrations(tenant_id,mission_id,provider,external_account,scopes,token_ref,status) VALUES($1,$2,'google_gmail',$3,$4,$5,'active')`,[m.rows[0].tenant_id,missionId,account,['gmail.readonly','gmail.send'],encryptSecret(tokens)]);
+      await audit({tenantId:m.rows[0].tenant_id,actorType:'integration',actorId:account||'google_gmail',action:'gmail.oauth_connected',resourceType:'mission',resourceId:missionId,ip:req.ip,metadata:{account,scopes:['gmail.readonly','gmail.send']}});
+    }
+    console.log('google_oauth_connected',missionId||oauthContext?.tenantId||'workspace',account||'account_unknown');
     res.clearCookie('hi_os_oauth_state',{path:'/api/oauth/google'});
     res.clearCookie('hi_os_oauth_mission',{path:'/api/oauth/google'});
-    res.redirect(`/?oauth=connected&mission=${encodeURIComponent(missionId)}`);
+    res.clearCookie('hi_os_oauth_context',{path:'/api/oauth/google'});
+    res.redirect(oauthContext?.kind==='workspace_mail'?'/?oauth=mail-connected':`/?oauth=connected&mission=${encodeURIComponent(missionId)}`);
   }catch(e){
     console.error('google_oauth_callback_failed',missionId||'unknown',e.message);
     if(missionId){

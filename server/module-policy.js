@@ -6,6 +6,7 @@ const MODULES = Object.freeze([
   'automation',
   'analytics',
   'proposal',
+  'mail',
   'knowledge'
 ]);
 

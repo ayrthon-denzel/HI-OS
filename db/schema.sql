@@ -141,6 +141,19 @@ CREATE TABLE IF NOT EXISTS integrations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS mail_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  gmail_message_id TEXT NOT NULL,
+  thread_id TEXT,
+  category TEXT NOT NULL DEFAULT 'autre',
+  workflow_status TEXT NOT NULL DEFAULT 'inbox' CHECK (workflow_status IN ('inbox','action','waiting','done','archived')),
+  priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low','normal','high','urgent')),
+  ai_summary TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(tenant_id,gmail_message_id)
+);
+
 CREATE TABLE IF NOT EXISTS agent_runs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -199,3 +212,4 @@ CREATE INDEX IF NOT EXISTS idx_applications_mission ON applications(mission_id,s
 CREATE INDEX IF NOT EXISTS idx_agent_runs_mission ON agent_runs(mission_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_client_events_mission ON client_events(mission_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_tenant ON audit_log(tenant_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_mail_state_tenant_status ON mail_state(tenant_id,workflow_status,updated_at DESC);

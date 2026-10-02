@@ -50,6 +50,14 @@ const modules = [
   },
   {
     section: "Votre activité",
+    key: "mail",
+    icon: "mail",
+    name: "Messagerie",
+    perm: "A2",
+    desc: "Trie, priorise et traite vos e-mails avec l’assistant.",
+  },
+  {
+    section: "Votre activité",
     key: "proposal",
     icon: "file",
     name: "Documents",
@@ -115,6 +123,10 @@ async function render(key = "command") {
     return;
   }
   if (window.HIOSWorkspace?.render) {
+    if (key === "mail" && window.HIOSMail?.render) {
+      await window.HIOSMail.render(c, m);
+      return;
+    }
     await window.HIOSWorkspace.render(key, m);
     return;
   }
