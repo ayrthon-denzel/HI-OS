@@ -406,7 +406,7 @@ app.get('/api/mail/messages',requireAuth,requireEnabledModule('mail'),async(req,
     await pool.query(`UPDATE integrations SET token_ref=$1,updated_at=now() WHERE id=$2`,[encryptSecret(result.tokens),integration.id]);
     const states=await pool.query(`SELECT gmail_message_id,category,workflow_status,priority,ai_summary FROM mail_state WHERE tenant_id=$1`,[req.auth.tenant_id]);
     const byId=new Map(states.rows.map(x=>[x.gmail_message_id,x]));
-    const items=result.messages.slice(0,50).map(message=>{const saved=byId.get(message.id),auto=mailClassification(message);return{...message,category:saved?.category||auto.category,workflowStatus:saved?.workflow_status||'inbox',priority:saved?.priority||auto.priority,aiSummary:saved?.ai_summary||message.snippet};});
+    const items=result.messages.slice(0,50).map(message=>{const saved=byId.get(message.id),auto=mailClassification(message);return{id:message.id,threadId:message.threadId,subject:message.subject,from:message.from,to:message.to,date:message.date,snippet:message.snippet,category:saved?.category||auto.category,workflowStatus:saved?.workflow_status||'inbox',priority:saved?.priority||auto.priority,aiSummary:saved?.ai_summary||message.snippet};});
     res.json({items,account:integration.external_account});
   }catch(e){console.error('mail_messages',e.message);res.status(502).json({error:e.message||'gmail_unavailable'});}
 });
